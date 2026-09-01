@@ -17,36 +17,16 @@ const PREVIEW_ACCOUNTS = {
 
 // Check if the current URL is a preview route that should auto-login
 function getPreviewCredentials() {
-  // 1. Check window.__MEDICONNECT_PORTAL__ (injected by index.html before React loads)
-  const windowPortal = window.__MEDICONNECT_PORTAL__;
-  if (windowPortal && ['patient', 'doctor', 'admin'].includes(windowPortal)) {
-    localStorage.setItem('mediconnect_portal', windowPortal);
+  // ONLY use window.__MEDICONNECT_PORTAL__ (set by injected <script> in index.html)
+  // Do NOT read localStorage — it may be stale from a different portal
+  const portal = window.__MEDICONNECT_PORTAL__;
+  if (!portal || !['patient', 'doctor', 'admin'].includes(portal)) {
+    return null; // Full App: no injection → no auto-login → shows home page
   }
-  // 2. Check localStorage portal flag (set by injected index.html)
-  const storedPortal = windowPortal || localStorage.getItem('mediconnect_portal');
-  if (storedPortal) {
-    const creds = PREVIEW_ACCOUNTS['/' + (storedPortal === 'doctor' ? 'doctor/dashboard' : storedPortal === 'admin' ? 'admin' : '')] || { email: 'patient@mediconnect.com', password: 'patient123', role: storedPortal };
-    return creds;
-  }
-
-  // 2. Check ?portal= query parameter
-  const params = new URLSearchParams(window.location.search);
-  const portalParam = params.get('portal');
-  if (portalParam && ['patient', 'doctor', 'admin'].includes(portalParam)) {
-    localStorage.setItem('mediconnect_portal', portalParam);
-    if (portalParam === 'doctor') return PREVIEW_ACCOUNTS['/doctor/dashboard'];
-    if (portalParam === 'admin') return PREVIEW_ACCOUNTS['/admin'];
-    return { email: 'patient@mediconnect.com', password: 'patient123', role: 'patient' };
-  }
-
-  // 3. Check URL path (handles GitHub Pages subpath like /Online-Doctor-s-consultation/...)
-  const fullPath = window.location.pathname;
-  const path = fullPath.replace(/^\/[^/]+/, '') || '/'; // strip base path for GH Pages
-  if (PREVIEW_ACCOUNTS[path]) return PREVIEW_ACCOUNTS[path];
-  if (path.startsWith('/doctor/')) return PREVIEW_ACCOUNTS['/doctor/dashboard'];
-  if (path.startsWith('/admin')) return PREVIEW_ACCOUNTS['/admin'];
-  if (path === '/login' || path === '/register' || path === '/forgot-password') return null;
-  return null;
+  localStorage.setItem('mediconnect_portal', portal);
+  if (portal === 'doctor') return PREVIEW_ACCOUNTS['/doctor/dashboard'];
+  if (portal === 'admin') return PREVIEW_ACCOUNTS['/admin'];
+  return { email: 'patient@mediconnect.com', password: 'patient123', role: 'patient' };
 }
 
 export function AuthProvider({ children }) {
