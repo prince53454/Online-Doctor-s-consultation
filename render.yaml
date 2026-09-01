@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: mediconnect
+    name: mediconnect-pro
     runtime: node
     plan: free
     buildCommand: cd server && npm install && cd ../client && npm install && npm run build
@@ -12,7 +12,5 @@ services:
         value: mediconnect_super_secret_key_2024_production
       - key: NODE_ENV
         value: production
-      - key: CLIENT_URL
-        value: https://mediconnect.onrender.com
       - key: PORT
-        value: 5000
+        value: 10000
