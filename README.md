@@ -23,6 +23,7 @@ A production-ready, full-stack healthcare platform with **Patient**, **Doctor**,
 | 👨‍⚕️ **Doctor (Static)** | [https://prince53454.github.io/mediconnect-doctor/](https://prince53454.github.io/mediconnect-doctor/) |
 | ⚙️ **Admin (Static)** | [https://prince53454.github.io/mediconnect-admin/](https://prince53454.github.io/mediconnect-admin/) |
 | 🔐 **Register** | [https://prince53454.github.io/register/](https://prince53454.github.io/register/) |
+| 🧠 **Alzheimer's Detection** | [https://alzheimer-s-detection-wi4c.onrender.com](https://alzheimer-s-detection-wi4c.onrender.com) |
 
 ## 🔑 Login Credentials
 
