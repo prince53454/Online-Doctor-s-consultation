@@ -17,10 +17,10 @@ A production-ready, full-stack healthcare platform with **Patient**, **Doctor**,
 
 | Portal | Link |
 |--------|------|
-| 🏠 **Patient Portal** | [Open Patient App](https://mediconnect-pro.hf.space/) |
-| 👨‍⚕️ **Doctor Dashboard** | [Open Doctor Panel](https://mediconnect-pro.hf.space/doctor/dashboard) |
-| ⚙️ **Admin Panel** | [Open Admin Panel](https://mediconnect-pro.hf.space/admin) |
-| 🔌 **API Health Check** | [API Status](https://mediconnect-pro.hf.space/api/health) |
+| 🏥 **Patient Portal** | [https://prince53454.github.io/mediconnect-patient/](https://prince53454.github.io/mediconnect-patient/) |
+| 👨‍⚕️ **Doctor Dashboard** | [https://prince53454.github.io/mediconnect-doctor/](https://prince53454.github.io/mediconnect-doctor/) |
+| ⚙️ **Admin Panel** | [https://prince53454.github.io/mediconnect-admin/](https://prince53454.github.io/mediconnect-admin/) |
+| 🔐 **Full App (Register)** | [https://prince53454.github.io/register/](https://prince53454.github.io/register/) |
 
 ## 🔑 Login Credentials
 
