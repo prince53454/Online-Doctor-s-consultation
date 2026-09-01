@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate as ReactRouterNavigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import ErrorBoundary from './components/ErrorBoundary';
@@ -49,6 +49,25 @@ import HealthMetrics from './pages/HealthMetrics';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import NotFound from './pages/NotFound';
+
+function PortalRedirect() {
+  const { user, loading } = useAuth();
+  const [redirected, setRedirected] = React.useState(false);
+  const navigate = ReactRouterNavigate();
+  React.useEffect(() => {
+    if (loading || redirected) return;
+    const portal = localStorage.getItem('mediconnect_portal');
+    const path = window.location.pathname;
+    if (portal === 'doctor' && path !== '/doctor/dashboard' && !path.startsWith('/doctor/') && path !== '/login' && path !== '/register') {
+      setRedirected(true);
+      navigate('/doctor/dashboard');
+    } else if (portal === 'admin' && !path.startsWith('/admin') && path !== '/login' && path !== '/register') {
+      setRedirected(true);
+      navigate('/admin');
+    }
+  }, [user, loading, redirected, navigate]);
+  return null;
+}
 
 function AppRoutes() {
   return (
@@ -132,6 +151,7 @@ export default function App() {
           }}
         />
         <EmergencySOS />
+        <PortalRedirect />
         <AppRoutes />
         </NotificationProvider>
         </LanguageProvider>
