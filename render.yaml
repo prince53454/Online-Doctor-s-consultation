@@ -7,7 +7,7 @@ services:
     startCommand: cd server && node index.js
     envVars:
       - key: MONGODB_URI
-        sync: false
+        value: mongodb+srv://thomasshelby09766_db_user:GRUfeMpYV50XIFr9@cluster0.pbmt6oy.mongodb.net/mediconnect_pro?appName=Cluster0
       - key: JWT_SECRET
         value: mediconnect_super_secret_key_2024_production
       - key: NODE_ENV
