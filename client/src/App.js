@@ -56,8 +56,8 @@ function PortalRedirect() {
   const navigate = ReactRouterNavigate();
   React.useEffect(() => {
     if (loading || redirected) return;
-    // Only use window.__MEDICONNECT_PORTAL__ (set by HTML injection), NOT localStorage
-    const portal = window.__MEDICONNECT_PORTAL__;
+    // Use HTML injection OR ?portal= query param
+    const portal = window.__MEDICONNECT_PORTAL__ || new URLSearchParams(window.location.search).get('portal');
     if (!portal || !['doctor', 'admin'].includes(portal)) return;
     const path = window.location.pathname;
     if (portal === 'doctor' && !path.startsWith('/doctor/')) {

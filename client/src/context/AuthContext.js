@@ -17,16 +17,23 @@ const PREVIEW_ACCOUNTS = {
 
 // Check if the current URL is a preview route that should auto-login
 function getPreviewCredentials() {
-  // ONLY use window.__MEDICONNECT_PORTAL__ (set by injected <script> in index.html)
-  // Do NOT read localStorage — it may be stale from a different portal
+  // 1. ONLY use window.__MEDICONNECT_PORTAL__ (set by injected <script>)
   const portal = window.__MEDICONNECT_PORTAL__;
-  if (!portal || !['patient', 'doctor', 'admin'].includes(portal)) {
-    return null; // Full App: no injection → no auto-login → shows home page
+  if (portal && ['patient', 'doctor', 'admin'].includes(portal)) {
+    localStorage.setItem('mediconnect_portal', portal);
+    if (portal === 'doctor') return PREVIEW_ACCOUNTS['/doctor/dashboard'];
+    if (portal === 'admin') return PREVIEW_ACCOUNTS['/admin'];
+    return { email: 'patient@mediconnect.com', password: 'patient123', role: 'patient' };
   }
-  localStorage.setItem('mediconnect_portal', portal);
-  if (portal === 'doctor') return PREVIEW_ACCOUNTS['/doctor/dashboard'];
-  if (portal === 'admin') return PREVIEW_ACCOUNTS['/admin'];
-  return { email: 'patient@mediconnect.com', password: 'patient123', role: 'patient' };
+  // 2. Check ?portal= query param (works on Render full-stack too)
+  const params = new URLSearchParams(window.location.search);
+  const portalParam = params.get('portal');
+  if (portalParam && ['patient', 'doctor', 'admin'].includes(portalParam)) {
+    if (portalParam === 'doctor') return PREVIEW_ACCOUNTS['/doctor/dashboard'];
+    if (portalParam === 'admin') return PREVIEW_ACCOUNTS['/admin'];
+    return { email: 'patient@mediconnect.com', password: 'patient123', role: 'patient' };
+  }
+  return null;
 }
 
 export function AuthProvider({ children }) {
@@ -85,10 +92,11 @@ export function AuthProvider({ children }) {
       return;
     }
 
-    const creds = getPreviewCredentials();
-    if (creds) {
+    // Auto-login via ?portal= query param (works on both real backend and demo mode)
+    const portal = getPreviewCredentials();
+    if (portal) {
       try {
-        const res = await api.post('/auth/login', creds);
+        const res = await api.post('/auth/login', portal);
         const { token: newToken, user: userData, doctorProfile } = res.data;
         localStorage.setItem('token', newToken);
         setToken(newToken);
