@@ -1,11 +1,15 @@
-FROM node:20-slim
+FROM node:18-alpine AS builder
+WORKDIR /app
+COPY client/package*.json ./client/
+RUN cd client && npm ci
+COPY client/ ./client/
+RUN cd client && CI=true npm run build
+
+FROM node:18-alpine
 WORKDIR /app
 COPY server/package*.json ./server/
 RUN cd server && npm ci --omit=dev
-COPY client/package*.json ./client/
-RUN cd client && npm ci
-COPY . .
-RUN cd client && CI=true npm run build
+COPY server/ ./server/
+COPY --from=builder /app/client/build ./client/build
 EXPOSE 5000
-ENV PORT=5000
-CMD ["sh", "-c", "cd server && node index.js"]
+CMD ["node", "server/index.js"]
