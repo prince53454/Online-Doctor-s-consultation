@@ -56,12 +56,14 @@ function PortalRedirect() {
   const navigate = ReactRouterNavigate();
   React.useEffect(() => {
     if (loading || redirected) return;
-    const portal = localStorage.getItem('mediconnect_portal');
+    // Only use window.__MEDICONNECT_PORTAL__ (set by HTML injection), NOT localStorage
+    const portal = window.__MEDICONNECT_PORTAL__;
+    if (!portal || !['doctor', 'admin'].includes(portal)) return;
     const path = window.location.pathname;
-    if (portal === 'doctor' && path !== '/doctor/dashboard' && !path.startsWith('/doctor/') && path !== '/login' && path !== '/register') {
+    if (portal === 'doctor' && !path.startsWith('/doctor/')) {
       setRedirected(true);
       navigate('/doctor/dashboard');
-    } else if (portal === 'admin' && !path.startsWith('/admin') && path !== '/login' && path !== '/register') {
+    } else if (portal === 'admin' && !path.startsWith('/admin')) {
       setRedirected(true);
       navigate('/admin');
     }
