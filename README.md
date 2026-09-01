@@ -17,10 +17,12 @@ A production-ready, full-stack healthcare platform with **Patient**, **Doctor**,
 
 | Portal | Link |
 |--------|------|
-| 🏥 **Patient Portal** | [https://prince53454.github.io/mediconnect-patient/](https://prince53454.github.io/mediconnect-patient/) |
-| 👨‍⚕️ **Doctor Dashboard** | [https://prince53454.github.io/mediconnect-doctor/](https://prince53454.github.io/mediconnect-doctor/) |
-| ⚙️ **Admin Panel** | [https://prince53454.github.io/mediconnect-admin/](https://prince53454.github.io/mediconnect-admin/) |
-| 🔐 **Full App (Register)** | [https://prince53454.github.io/register/](https://prince53454.github.io/register/) |
+| 🏥 **Full App (Patient/Doctor)** | [https://mediconnect-pro-kbbb.onrender.com](https://mediconnect-pro-kbbb.onrender.com) |
+| ⚙️ **Admin Dashboard** | [https://mediconnect-admin-p99i.onrender.com/?portal=admin](https://mediconnect-admin-p99i.onrender.com/?portal=admin) |
+| 🏥 **Patient (Static)** | [https://prince53454.github.io/mediconnect-patient/](https://prince53454.github.io/mediconnect-patient/) |
+| 👨‍⚕️ **Doctor (Static)** | [https://prince53454.github.io/mediconnect-doctor/](https://prince53454.github.io/mediconnect-doctor/) |
+| ⚙️ **Admin (Static)** | [https://prince53454.github.io/mediconnect-admin/](https://prince53454.github.io/mediconnect-admin/) |
+| 🔐 **Register** | [https://prince53454.github.io/register/](https://prince53454.github.io/register/) |
 
 ## 🔑 Login Credentials
 
