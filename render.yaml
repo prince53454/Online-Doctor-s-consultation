@@ -3,18 +3,16 @@ services:
     name: mediconnect
     runtime: node
     plan: free
-    buildCommand: cd client && npm ci && npm run build && cd ../server && npm ci
+    buildCommand: cd server && npm install && cd ../client && npm install && npm run build
     startCommand: cd server && node index.js
     envVars:
-      - key: NODE_ENV
-        value: production
-      - key: PORT
-        value: 10000
       - key: MONGODB_URI
         sync: false
       - key: JWT_SECRET
-        generateValue: true
-      - key: JWT_EXPIRE
-        value: 30d
+        value: mediconnect_super_secret_key_2024_production
+      - key: NODE_ENV
+        value: production
       - key: CLIENT_URL
         value: https://mediconnect.onrender.com
+      - key: PORT
+        value: 5000

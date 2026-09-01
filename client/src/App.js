@@ -75,7 +75,7 @@ function AppRoutes() {
   return (
     <Routes>
       {/* ── Patient Frontend (direct access) ── */}
-      <Route path="/" element={<><Navbar /><Home /><Footer /></>} />
+      <Route path="/" element={window.__MEDICONNECT_PORTAL__ ? <><Navbar /><Home /><Footer /></> : <><Navbar /><Register /><Footer /></>} />
       <Route path="/dashboard" element={<><Navbar /><PatientDashboard /><Footer /></>} />
       <Route path="/doctors" element={<><Navbar /><Doctors /><Footer /></>} />
       <Route path="/doctors/:id" element={<><Navbar /><DoctorProfile /><Footer /></>} />
