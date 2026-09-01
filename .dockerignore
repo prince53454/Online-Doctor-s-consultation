@@ -1,0 +1,16 @@
+node_modules
+client/node_modules
+server/node_modules
+client/build
+.git
+.github
+.vscode
+.freebuff
+*.md
+!README.md
+.env
+server/.env
+client/.env
+docker-compose.yml
+p.java
+package-lock.json
