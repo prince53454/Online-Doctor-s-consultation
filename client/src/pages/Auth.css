@@ -1,0 +1,572 @@
+.auth-page {
+  min-height: 100vh;
+  background: var(--gray-50);
+}
+
+.auth-container {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr;
+  min-height: 100vh;
+}
+
+.auth-left {
+  background: linear-gradient(135deg, #4F46E5, #7C3AED);
+  padding: 60px;
+  display: flex;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.auth-left-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+.auth-bg-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.2;
+}
+
+.auth-left::before {
+  content: '';
+  position: absolute;
+  width: 400px; height: 400px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 50%;
+  top: -100px; right: -100px;
+}
+
+.auth-left::after {
+  content: '';
+  position: absolute;
+  width: 300px; height: 300px;
+  background: rgba(255,255,255,0.05);
+  border-radius: 50%;
+  bottom: -50px; left: -50px;
+}
+
+.auth-left-content {
+  position: relative;
+  z-index: 1;
+  color: white;
+}
+
+.auth-left-icon {
+  margin-bottom: 24px;
+}
+
+.auth-logo-img {
+  width: 64px;
+  height: 64px;
+  border-radius: 16px;
+  object-fit: cover;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+.auth-left-content h2 {
+  font-size: 32px;
+  color: white;
+  margin-bottom: 16px;
+  line-height: 1.2;
+}
+
+.auth-left-content p {
+  font-size: 16px;
+  opacity: 0.85;
+  line-height: 1.7;
+  margin-bottom: 32px;
+}
+
+.auth-features {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.auth-feature {
+  font-size: 15px;
+  opacity: 0.9;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.auth-feature-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.auth-right {
+  padding: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.auth-form-wrapper {
+  width: 100%;
+  max-width: 440px;
+}
+
+.auth-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 14px;
+  color: var(--gray-500);
+  text-decoration: none;
+  margin-bottom: 24px;
+  transition: var(--transition);
+}
+
+.auth-back:hover {
+  color: var(--primary);
+}
+
+.auth-form-wrapper h1 {
+  font-size: 28px;
+  margin-bottom: 8px;
+}
+
+.auth-subtitle {
+  color: var(--gray-500);
+  margin-bottom: 32px;
+}
+
+.auth-form .form-group {
+  margin-bottom: 16px;
+}
+
+.form-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.form-row-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: var(--gray-600);
+  cursor: pointer;
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--primary);
+}
+
+.form-link {
+  color: var(--primary);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.form-link:hover {
+  text-decoration: underline;
+}
+
+.btn-full {
+  width: 100%;
+}
+
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin: 24px 0;
+  color: var(--gray-400);
+  font-size: 13px;
+}
+
+.auth-divider::before, .auth-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--gray-200);
+}
+
+.social-auth {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.social-btn {
+  padding: 12px;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius);
+  background: white;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--transition);
+  font-family: var(--font-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.social-icon {
+  width: 20px;
+  height: 20px;
+}
+
+.social-btn:hover {
+  background: var(--gray-50);
+  border-color: var(--gray-300);
+}
+
+.auth-switch {
+  text-align: center;
+  margin-top: 24px;
+  font-size: 14px;
+  color: var(--gray-500);
+}
+
+.auth-switch a {
+  color: var(--primary);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+/* Role Selector */
+.role-selector {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.role-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 20px;
+  border: 2px solid var(--gray-200);
+  border-radius: var(--radius-md);
+  background: white;
+  cursor: pointer;
+  transition: var(--transition);
+  font-family: var(--font-primary);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.role-btn:hover {
+  border-color: var(--primary-light);
+  background: var(--primary-50);
+}
+
+.role-btn.active {
+  border-color: var(--primary);
+  background: var(--primary-50);
+  color: var(--primary);
+}
+
+.role-icon {
+  font-size: 28px;
+}
+
+.demo-credentials {
+  margin-top: 24px;
+  padding: 16px;
+  background: var(--gray-50);
+  border-radius: var(--radius);
+  font-size: 12px;
+  color: var(--gray-600);
+}
+
+.demo-credentials p {
+  margin-bottom: 4px;
+}
+
+@media (max-width: 768px) {
+  .auth-container { grid-template-columns: 1fr; }
+  .auth-left { display: none; }
+  .auth-right { padding: 32px 20px; }
+  .form-row-2 { grid-template-columns: 1fr; }
+}
+
+/* ============================================
+   REDESIGNED AUTH STYLES
+   ============================================ */
+
+/* Role Tabs (Login Page) */
+.role-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 24px;
+  background: var(--gray-100);
+  border-radius: 12px;
+  padding: 4px;
+}
+
+.role-tab {
+  padding: 12px 16px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: var(--font-primary);
+  color: var(--gray-500);
+}
+
+.role-tab.active.patient {
+  background: white;
+  color: var(--primary);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.role-tab.active.doctor {
+  background: white;
+  color: #059669;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.role-tab:hover:not(.active) {
+  color: var(--gray-700);
+}
+
+/* Doctor Button Style */
+.btn-doctor {
+  background: linear-gradient(135deg, #059669, #10B981);
+  color: white;
+  border: none;
+  padding: 14px 24px;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s;
+  font-family: var(--font-primary);
+}
+
+.btn-doctor:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(5,150,105,0.3);
+}
+
+/* Auth Logo Circle */
+.auth-logo-circle {
+  width: 64px;
+  height: 64px;
+  border-radius: 16px;
+  background: rgba(255,255,255,0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  backdrop-filter: blur(10px);
+}
+
+/* Feature Check */
+.feature-check {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background: rgba(255,255,255,0.2);
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+/* Role Cards (Register Page) */
+.role-cards-register {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.role-card-register {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  border: 2px solid var(--gray-200);
+  border-radius: 12px;
+  background: white;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: left;
+  font-family: var(--font-primary);
+}
+
+.role-card-register:hover {
+  border-color: var(--gray-300);
+}
+
+.role-card-register.active.patient {
+  border-color: var(--primary);
+  background: var(--primary-50);
+}
+
+.role-card-register.active.doctor {
+  border-color: #059669;
+  background: #ECFDF5;
+}
+
+.role-card-icon {
+  font-size: 28px;
+  flex-shrink: 0;
+}
+
+.role-card-register strong {
+  display: block;
+  font-size: 14px;
+  color: var(--gray-900);
+  margin-bottom: 2px;
+}
+
+.role-card-register span {
+  font-size: 11px;
+  color: var(--gray-500);
+  line-height: 1.4;
+}
+
+/* Doctor Registration CTA */
+.doctor-register-cta {
+  background: linear-gradient(135deg, #ECFDF5, #D1FAE5);
+  border: 1px solid #A7F3D0;
+  border-radius: 16px;
+  padding: 32px;
+  text-align: center;
+}
+
+.doctor-cta-icon {
+  font-size: 48px;
+  margin-bottom: 12px;
+}
+
+.doctor-register-cta h3 {
+  font-size: 20px;
+  font-weight: 700;
+  color: #065F46;
+  margin-bottom: 8px;
+}
+
+.doctor-register-cta > p {
+  font-size: 14px;
+  color: #047857;
+  line-height: 1.6;
+  margin-bottom: 16px;
+}
+
+.doctor-cta-steps {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.doctor-cta-steps span {
+  padding: 4px 10px;
+  background: white;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #065F46;
+}
+
+.doctor-cta-note {
+  margin-top: 12px;
+  font-size: 12px;
+  color: #047857;
+}
+
+/* Quick Demo Access */
+.demo-quick-access {
+  margin-top: 20px;
+}
+
+.demo-toggle {
+  width: 100%;
+  padding: 10px;
+  border: 1px dashed var(--gray-300);
+  border-radius: 10px;
+  background: var(--gray-50);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--gray-500);
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: var(--font-primary);
+}
+
+.demo-toggle:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.demo-accounts {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.demo-accounts-title {
+  font-size: 12px;
+  color: var(--gray-400);
+  margin-bottom: 4px;
+}
+
+.demo-account-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border: 1px solid var(--gray-200);
+  border-radius: 10px;
+  background: white;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: left;
+  font-family: var(--font-primary);
+}
+
+.demo-account-btn:hover {
+  border-color: var(--primary);
+  background: var(--primary-50);
+}
+
+.demo-avatar {
+  font-size: 24px;
+}
+
+.demo-account-btn strong {
+  display: block;
+  font-size: 13px;
+  color: var(--gray-800);
+}
+
+.demo-account-btn span {
+  font-size: 11px;
+  color: var(--gray-500);
+}

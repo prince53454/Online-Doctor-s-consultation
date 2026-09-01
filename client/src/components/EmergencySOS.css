@@ -1,0 +1,33 @@
+/* Emergency SOS */
+.sos-container { position: fixed; bottom: 24px; right: 24px; z-index: 9999; }
+
+.sos-fab { width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg, #EF4444, #DC2626); color: white; border: none; font-size: 24px; cursor: pointer; box-shadow: 0 4px 20px rgba(239,68,68,0.4); display: flex; align-items: center; justify-content: center; transition: all 0.3s; animation: sos-pulse 2s infinite; }
+.sos-fab:hover { transform: scale(1.1); box-shadow: 0 6px 30px rgba(239,68,68,0.5); }
+
+@keyframes sos-pulse { 0%, 100% { box-shadow: 0 4px 20px rgba(239,68,68,0.4); } 50% { box-shadow: 0 4px 30px rgba(239,68,68,0.6); } }
+
+.sos-panel { position: absolute; bottom: 70px; right: 0; width: 360px; background: white; border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,0.2); overflow: hidden; animation: sos-slide 0.3s ease-out; }
+@keyframes sos-slide { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+.sos-panel-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; background: linear-gradient(135deg, #EF4444, #DC2626); color: white; }
+.sos-panel-header h3 { font-size: 16px; font-weight: 700; margin: 0; }
+.sos-close { background: rgba(255,255,255,0.2); border: none; color: white; width: 28px; height: 28px; border-radius: 8px; cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; }
+
+.sos-panel-body { padding: 16px 20px; max-height: 400px; overflow-y: auto; }
+.sos-disclaimer { font-size: 12px; color: #DC2626; background: #FEF2F2; padding: 10px 12px; border-radius: 8px; margin-bottom: 14px; font-weight: 500; line-height: 1.5; }
+
+.sos-numbers { display: flex; flex-direction: column; gap: 8px; }
+.sos-number-item { display: flex; align-items: center; gap: 12px; padding: 10px 12px; background: #F8FAFC; border-radius: 10px; text-decoration: none; color: inherit; transition: all 0.2s; border: 1px solid #E2E8F0; }
+.sos-number-item:hover { background: #FEF2F2; border-color: #FECACA; }
+.sos-num-icon { font-size: 20px; width: 36px; text-align: center; }
+.sos-num-info { flex: 1; }
+.sos-num-info h4 { font-size: 13px; font-weight: 700; color: #0F172A; margin: 0; }
+.sos-num-info p { font-size: 11px; color: #94A3B8; margin: 1px 0 0; }
+.sos-num-badge { background: #DC2626; color: white; font-size: 14px; font-weight: 800; padding: 4px 12px; border-radius: 8px; letter-spacing: 1px; }
+
+.sos-tips { margin-top: 14px; padding: 12px; background: #FFFBEB; border-radius: 10px; border: 1px solid #FDE68A; }
+.sos-tips h4 { font-size: 13px; font-weight: 700; color: #92400E; margin-bottom: 8px; }
+.sos-tips ul { margin: 0; padding-left: 16px; }
+.sos-tips li { font-size: 12px; color: #78350F; line-height: 1.6; }
+
+@media (max-width: 480px) { .sos-panel { width: calc(100vw - 32px); right: -8px; } }

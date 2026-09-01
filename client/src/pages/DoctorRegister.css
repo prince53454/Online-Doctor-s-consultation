@@ -1,0 +1,101 @@
+/* Doctor Registration Page */
+.dr-reg-page { min-height: 100vh; background: linear-gradient(135deg, #f0fdf4 0%, #ecfeff 50%, #f5f3ff 100%); padding: 40px 20px; }
+.dr-reg-container { max-width: 760px; margin: 0 auto; }
+.dr-reg-header { text-align: center; margin-bottom: 32px; }
+.dr-reg-header h1 { font-size: 32px; margin-bottom: 8px; }
+.dr-reg-header p { color: var(--gray-500); font-size: 16px; }
+
+/* Progress Steps */
+.dr-reg-progress { display: flex; justify-content: center; gap: 8px; margin-bottom: 32px; }
+.dr-reg-step { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: var(--gray-400); }
+.dr-reg-step .step-num { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: var(--gray-100); color: var(--gray-400); font-size: 13px; font-weight: 700; transition: all 0.3s; }
+.dr-reg-step.active .step-num { background: #059669; color: white; box-shadow: 0 2px 10px rgba(5,150,105,0.3); }
+.dr-reg-step.completed .step-num { background: #059669; color: white; }
+.dr-reg-step.active { color: #059669; }
+.dr-reg-step.completed { color: #059669; }
+.dr-reg-step-line { width: 40px; height: 2px; background: var(--gray-200); align-self: center; }
+.dr-reg-step.completed + .dr-reg-step-line { background: #059669; }
+
+/* Form Card */
+.dr-reg-card { background: white; border-radius: 16px; box-shadow: 0 4px 24px rgba(0,0,0,0.06); overflow: hidden; }
+.dr-reg-card-body { padding: 32px; }
+.dr-reg-card-footer { display: flex; justify-content: space-between; padding: 20px 32px; border-top: 1px solid var(--gray-100); background: var(--gray-50); }
+
+/* Section Title */
+.dr-reg-section-title { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+.dr-reg-section-desc { font-size: 14px; color: var(--gray-500); margin-bottom: 24px; }
+
+/* Form Grid */
+.dr-reg-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.dr-reg-grid .full { grid-column: 1 / -1; }
+
+/* Specialization Grid */
+.spec-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+.spec-option {
+  padding: 14px 10px; border: 2px solid var(--gray-200); border-radius: 10px;
+  text-align: center; cursor: pointer; transition: all 0.2s; font-size: 12px; font-weight: 600;
+  background: white;
+}
+.spec-option:hover { border-color: #059669; background: #f0fdf4; }
+.spec-option.selected { border-color: #059669; background: #ecfdf5; color: #059669; box-shadow: 0 0 0 3px rgba(5,150,105,0.1); }
+.spec-option .spec-icon { font-size: 24px; margin-bottom: 6px; display: block; }
+
+/* Fee Inputs */
+.fee-inputs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.fee-input-group { text-align: center; }
+.fee-input-group label { font-size: 12px; color: var(--gray-500); font-weight: 600; display: block; margin-bottom: 6px; }
+.fee-input-group .fee-input { width: 100%; padding: 12px; border: 2px solid var(--gray-200); border-radius: 8px; font-size: 18px; font-weight: 700; text-align: center; color: #059669; }
+.fee-input-group .fee-input:focus { outline: none; border-color: #059669; box-shadow: 0 0 0 3px rgba(5,150,105,0.1); }
+
+/* Schedule Builder */
+.schedule-builder { display: grid; gap: 12px; }
+.schedule-day-row { display: flex; align-items: center; gap: 12px; padding: 12px; background: var(--gray-50); border-radius: 8px; }
+.schedule-day-toggle { display: flex; align-items: center; gap: 8px; min-width: 140px; }
+.schedule-day-toggle input[type="checkbox"] { width: 18px; height: 18px; accent-color: #059669; }
+.schedule-day-toggle label { font-size: 13px; font-weight: 600; cursor: pointer; }
+.schedule-slots-row { display: flex; gap: 8px; flex-wrap: wrap; flex: 1; }
+.slot-time-input { padding: 6px 10px; border: 1px solid var(--gray-200); border-radius: 6px; font-size: 12px; width: 90px; text-align: center; }
+.slot-time-input:focus { outline: none; border-color: #059669; }
+.add-slot-btn { padding: 6px 12px; border: 1px dashed #059669; background: transparent; color: #059669; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; }
+.add-slot-btn:hover { background: #ecfdf5; }
+.remove-slot-btn { padding: 4px 8px; border: none; background: #fef2f2; color: #ef4444; border-radius: 4px; font-size: 14px; cursor: pointer; }
+
+/* Document Upload */
+.doc-upload-zone {
+  border: 2px dashed var(--gray-300); border-radius: 12px; padding: 32px; text-align: center;
+  cursor: pointer; transition: all 0.2s; background: var(--gray-50);
+}
+.doc-upload-zone:hover { border-color: #059669; background: #f0fdf4; }
+.doc-upload-zone .upload-icon { font-size: 36px; margin-bottom: 8px; }
+.doc-upload-zone p { font-size: 14px; color: var(--gray-500); }
+.doc-upload-zone .upload-hint { font-size: 12px; color: var(--gray-400); margin-top: 4px; }
+.doc-list { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+.doc-item { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: white; border: 1px solid var(--gray-200); border-radius: 8px; }
+.doc-item .doc-icon { font-size: 20px; }
+.doc-item .doc-name { flex: 1; font-size: 13px; font-weight: 600; }
+.doc-item .doc-size { font-size: 11px; color: var(--gray-400); }
+.doc-item .doc-remove { background: none; border: none; color: #ef4444; cursor: pointer; font-size: 16px; }
+
+/* Review Step */
+.review-section { margin-bottom: 20px; }
+.review-section h4 { font-size: 14px; font-weight: 600; color: var(--gray-700); margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid var(--gray-100); }
+.review-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 13px; }
+.review-label { color: var(--gray-500); }
+.review-value { font-weight: 600; color: var(--gray-800); }
+
+/* Pending Approval Page */
+.pending-page { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #f0fdf4, #ecfeff); padding: 40px; }
+.pending-card { background: white; border-radius: 20px; padding: 48px; max-width: 500px; text-align: center; box-shadow: 0 8px 40px rgba(0,0,0,0.08); }
+.pending-icon { font-size: 64px; margin-bottom: 16px; }
+.pending-card h1 { font-size: 24px; margin-bottom: 12px; }
+.pending-card p { color: var(--gray-500); line-height: 1.6; margin-bottom: 24px; }
+.pending-steps { text-align: left; background: var(--gray-50); border-radius: 12px; padding: 20px; margin-bottom: 24px; }
+.pending-steps h3 { font-size: 14px; margin-bottom: 12px; }
+.pending-steps li { font-size: 13px; color: var(--gray-600); padding: 4px 0; }
+
+@media (max-width: 768px) {
+  .dr-reg-grid { grid-template-columns: 1fr; }
+  .spec-grid { grid-template-columns: repeat(3, 1fr); }
+  .fee-inputs { grid-template-columns: 1fr; }
+  .schedule-day-row { flex-direction: column; align-items: flex-start; }
+}

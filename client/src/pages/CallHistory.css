@@ -1,0 +1,60 @@
+/* Call History Page */
+.ch-history-page { min-height: 100vh; background: #f8fafc; padding: 32px 0; }
+.ch-h-header { margin-bottom: 24px; }
+.ch-h-header h1 { font-size: 28px; font-weight: 800; color: #0f172a; }
+
+/* Stats */
+.ch-h-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+.ch-h-stat { display: flex; align-items: center; gap: 12px; padding: 16px 18px; background: white; border-radius: 12px; border: 1px solid #e2e8f0; }
+.ch-h-stat-icon { font-size: 24px; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; background: #f1f5f9; border-radius: 10px; }
+.ch-h-stat-value { display: block; font-size: 20px; font-weight: 800; color: #0f172a; }
+.ch-h-stat-label { font-size: 12px; color: #64748b; }
+
+/* Filters */
+.ch-h-filters { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+.ch-h-filter-btn { padding: 8px 18px; border: 2px solid #e2e8f0; background: white; border-radius: 10px; font-size: 13px; font-weight: 600; color: #64748b; cursor: pointer; transition: all 0.2s; }
+.ch-h-filter-btn:hover { border-color: #4F46E5; color: #4F46E5; }
+.ch-h-filter-btn.active { background: #4F46E5; color: white; border-color: #4F46E5; }
+
+/* Empty */
+.ch-h-empty { text-align: center; padding: 60px 20px; background: white; border-radius: 14px; border: 2px dashed #e2e8f0; }
+.ch-h-empty span { font-size: 48px; display: block; margin-bottom: 12px; }
+.ch-h-empty h3 { font-size: 18px; color: #0f172a; margin-bottom: 6px; }
+.ch-h-empty p { color: #64748b; font-size: 14px; }
+
+/* Call List */
+.ch-h-list { display: flex; flex-direction: column; gap: 10px; }
+
+/* Call Card */
+.ch-h-card { display: flex; align-items: flex-start; gap: 16px; padding: 18px 20px; background: white; border-radius: 14px; border: 1px solid #e2e8f0; transition: all 0.2s; }
+.ch-h-card:hover { border-color: #c7d2fe; box-shadow: 0 2px 12px rgba(79,70,229,0.06); }
+
+.ch-h-avatar-wrap { position: relative; flex-shrink: 0; }
+.ch-h-avatar { width: 48px; height: 48px; border-radius: 12px; }
+.ch-h-type-badge { position: absolute; bottom: -4px; right: -4px; font-size: 14px; background: white; border: 2px solid white; border-radius: 6px; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; }
+
+.ch-h-card-main { flex: 1; min-width: 0; }
+.ch-h-row-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+.ch-h-card-main h3 { font-size: 15px; font-weight: 700; color: #0f172a; margin: 0; }
+.ch-h-role { font-size: 12px; color: #64748b; margin: 2px 0 0; }
+.ch-h-meta { text-align: right; flex-shrink: 0; }
+.ch-h-date { display: block; font-size: 12px; color: #94a3b8; margin-bottom: 4px; }
+.ch-h-status { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 6px; }
+.ch-h-status-done { background: #f1f5f9; color: #64748b; }
+.ch-h-status-live { background: #ecfdf5; color: #059669; }
+.ch-h-status-wait { background: #fef3c7; color: #d97706; }
+
+.ch-h-details { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 6px; }
+.ch-h-detail { font-size: 12px; color: #64748b; }
+
+.ch-h-last-msg { font-size: 12px; color: #94a3b8; background: #f8fafc; padding: 6px 10px; border-radius: 8px; margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ch-h-last-msg strong { color: #64748b; }
+
+.ch-h-card-actions { flex-shrink: 0; align-self: center; }
+
+@media (max-width: 768px) {
+  .ch-h-stats { grid-template-columns: repeat(2, 1fr); }
+  .ch-h-card { flex-direction: column; }
+  .ch-h-meta { text-align: left; }
+  .ch-h-card-actions { align-self: flex-start; }
+}

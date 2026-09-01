@@ -1,0 +1,90 @@
+/* Patient Dashboard */
+.pd-page { min-height: 100vh; background: #f8fafc; padding: 32px 0; }
+
+.pd-hero { display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px; flex-wrap: wrap; gap: 16px; }
+.pd-hero-left { display: flex; align-items: center; gap: 16px; }
+.pd-hero-avatar { width: 56px; height: 56px; border-radius: 16px; }
+.pd-hero h1 { font-size: 26px; font-weight: 800; color: #0f172a; margin: 0; }
+.pd-hero p { color: #64748b; font-size: 14px; margin: 2px 0 0; }
+.pd-hero-actions { display: flex; gap: 10px; }
+
+/* Stats */
+.pd-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+.pd-stat-card { display: flex; align-items: center; gap: 14px; padding: 18px 20px; background: white; border-radius: 14px; border: 1px solid #e2e8f0; }
+.pd-stat-icon { font-size: 28px; width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; border-radius: 12px; }
+.pd-stat-card.blue .pd-stat-icon { background: #eff6ff; }
+.pd-stat-card.green .pd-stat-icon { background: #ecfdf5; }
+.pd-stat-card.purple .pd-stat-icon { background: #f5f3ff; }
+.pd-stat-card.orange .pd-stat-icon { background: #fff7ed; }
+.pd-stat-info h3 { font-size: 22px; font-weight: 800; color: #0f172a; margin: 0; }
+.pd-stat-info p { font-size: 12px; color: #64748b; margin: 2px 0 0; }
+
+/* Grid Layout */
+.pd-grid { display: grid; grid-template-columns: 1fr 340px; gap: 20px; }
+.pd-main, .pd-sidebar { display: flex; flex-direction: column; gap: 20px; }
+
+/* Cards */
+.pd-card { background: white; border-radius: 14px; border: 1px solid #e2e8f0; overflow: hidden; }
+.pd-card-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid #f1f5f9; }
+.pd-card-header h3 { font-size: 15px; font-weight: 700; color: #0f172a; margin: 0; }
+.pd-link { font-size: 13px; color: #4F46E5; text-decoration: none; font-weight: 600; }
+.pd-link:hover { text-decoration: underline; }
+.pd-card-body { padding: 12px 20px 16px; }
+
+/* Empty */
+.pd-empty { text-align: center; padding: 28px 16px; color: #94a3b8; }
+.pd-empty span { font-size: 32px; display: block; margin-bottom: 8px; }
+.pd-empty p { font-size: 13px; margin-bottom: 10px; }
+
+/* Appointment Item */
+.pd-apt-item { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid #f1f5f9; }
+.pd-apt-item:last-child { border-bottom: none; }
+.pd-apt-avatar { width: 40px; height: 40px; border-radius: 10px; }
+.pd-apt-info { flex: 1; min-width: 0; }
+.pd-apt-info h4 { font-size: 14px; font-weight: 700; color: #0f172a; margin: 0; }
+.pd-apt-info p { font-size: 12px; color: #64748b; margin: 2px 0 0; }
+.pd-apt-time { text-align: right; flex-shrink: 0; }
+.pd-time { display: block; font-size: 14px; font-weight: 700; color: #4F46E5; }
+.pd-date { font-size: 11px; color: #94a3b8; }
+.pd-apt-actions { flex-shrink: 0; }
+.pd-badge { display: inline-block; padding: 3px 10px; border-radius: 6px; font-size: 11px; font-weight: 600; }
+.pd-badge-green { background: #ecfdf5; color: #059669; }
+.pd-badge-yellow { background: #fef3c7; color: #d97706; }
+
+/* Prescription Item */
+.pd-rx-item { display: flex; align-items: flex-start; gap: 12px; padding: 10px 0; border-bottom: 1px solid #f1f5f9; }
+.pd-rx-item:last-child { border-bottom: none; }
+.pd-rx-icon { font-size: 20px; margin-top: 2px; }
+.pd-rx-info h4 { font-size: 14px; font-weight: 700; color: #0f172a; margin: 0; }
+.pd-rx-info p { font-size: 12px; color: #64748b; margin: 2px 0 0; }
+.pd-rx-doctor { color: #4F46E5 !important; font-weight: 500; }
+
+/* Quick Actions */
+.pd-actions-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+.pd-action-btn { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 14px 8px; background: #f8fafc; border-radius: 12px; text-decoration: none; color: #334155; font-size: 12px; font-weight: 600; transition: all 0.2s; border: 1px solid #e2e8f0; }
+.pd-action-btn:hover { background: #eff6ff; border-color: #4F46E5; color: #4F46E5; transform: translateY(-1px); }
+.pd-action-icon { font-size: 22px; }
+
+/* Notification Item */
+.pd-notif-item { display: flex; gap: 10px; padding: 10px 0; border-bottom: 1px solid #f1f5f9; }
+.pd-notif-item:last-child { border-bottom: none; }
+.pd-notif-dot { width: 8px; height: 8px; border-radius: 50%; background: #4F46E5; margin-top: 6px; flex-shrink: 0; }
+.pd-notif-content h4 { font-size: 13px; font-weight: 600; color: #0f172a; margin: 0; }
+.pd-notif-content p { font-size: 12px; color: #64748b; margin: 2px 0 0; line-height: 1.4; }
+.pd-notif-time { font-size: 11px; color: #94a3b8; }
+
+/* Health Tip */
+.pd-health-tip { background: linear-gradient(135deg, #eff6ff, #f5f3ff); border: none; padding: 20px; text-align: center; }
+.pd-tip-icon { font-size: 32px; margin-bottom: 8px; }
+.pd-health-tip h4 { font-size: 15px; font-weight: 700; color: #0f172a; margin: 0 0 6px; }
+.pd-health-tip p { font-size: 13px; color: #64748b; margin: 0; line-height: 1.5; }
+
+@media (max-width: 1024px) {
+  .pd-grid { grid-template-columns: 1fr; }
+  .pd-stats { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 640px) {
+  .pd-stats { grid-template-columns: 1fr; }
+  .pd-hero-actions { flex-direction: column; width: 100%; }
+  .pd-actions-grid { grid-template-columns: repeat(4, 1fr); }
+}

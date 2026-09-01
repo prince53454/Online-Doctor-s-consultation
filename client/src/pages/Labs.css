@@ -1,0 +1,370 @@
+.labs-hero {
+  position: relative;
+  background: linear-gradient(135deg, #059669, #10B981);
+  padding: 60px 0 48px;
+  color: white;
+  overflow: hidden;
+}
+.labs-hero-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.15;
+}
+.labs-hero .container { position: relative; z-index: 1; }
+.labs-hero h1 { font-size: 32px; font-weight: 800; margin: 0 0 8px; }
+.labs-hero p { font-size: 16px; opacity: 0.9; margin: 0 0 24px; }
+.labs-search {
+  display: flex;
+  gap: 8px;
+  max-width: 600px;
+}
+.labs-search-input {
+  flex: 1;
+  position: relative;
+}
+.labs-search-input .search-icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 16px;
+}
+.labs-search-input input {
+  width: 100%;
+  padding: 14px 14px 14px 42px;
+  border: none;
+  border-radius: 10px;
+  font-size: 15px;
+  outline: none;
+}
+.labs-content { padding: 24px 0 48px; }
+.labs-filters {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.filter-group label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748B;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+}
+.filter-group select {
+  padding: 8px 12px;
+  border: 1px solid #E2E8F0;
+  border-radius: 8px;
+  font-size: 14px;
+  background: white;
+  cursor: pointer;
+}
+.labs-categories {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+}
+.category-chip {
+  padding: 8px 16px;
+  border: 2px solid #E2E8F0;
+  border-radius: 24px;
+  background: white;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.category-chip:hover { border-color: #10B981; }
+.category-chip.active {
+  background: #10B981;
+  color: white;
+  border-color: #10B981;
+}
+.labs-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: 20px;
+}
+.lab-card {
+  background: white;
+  border: 1px solid #E2E8F0;
+  border-radius: 12px;
+  padding: 20px;
+  text-decoration: none;
+  color: inherit;
+  transition: all 0.2s;
+  display: flex;
+  flex-direction: column;
+}
+.lab-card:hover {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  transform: translateY(-2px);
+}
+.lab-card-header {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.lab-avatar {
+  width: 60px;
+  height: 60px;
+  border-radius: 10px;
+  object-fit: cover;
+}
+.lab-header-info h3 {
+  font-size: 16px;
+  font-weight: 700;
+  margin: 0 0 4px;
+  color: #1E293B;
+}
+.lab-address {
+  font-size: 13px;
+  color: #64748B;
+  margin: 0 0 6px;
+}
+.lab-badges {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.badge {
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+}
+.badge.nabl { background: #DCFCE7; color: #166534; }
+.badge.home { background: #DBEAFE; color: #1E40AF; }
+.lab-card-stats {
+  display: flex;
+  gap: 16px;
+  padding: 12px 0;
+  border-top: 1px solid #F1F5F9;
+  border-bottom: 1px solid #F1F5F9;
+  margin-bottom: 12px;
+}
+.lab-stat { display: flex; flex-direction: column; align-items: center; flex: 1; }
+.stat-value { font-size: 14px; font-weight: 700; color: #1E293B; }
+.stat-label { font-size: 11px; color: #94A3B8; }
+.lab-card-tests {
+  flex: 1;
+  margin-bottom: 12px;
+}
+.test-preview {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 0;
+}
+.test-name { font-size: 13px; color: #475569; }
+.test-price { font-size: 13px; font-weight: 700; color: #059669; }
+.old-price { text-decoration: line-through; color: #94A3B8; font-weight: 400; margin-right: 4px; font-size: 12px; }
+.more-tests { font-size: 13px; color: #4F46E5; font-weight: 600; }
+.lab-card-footer {
+  padding-top: 8px;
+}
+.lab-view-btn {
+  display: block;
+  text-align: center;
+  padding: 10px;
+  background: #F0FDF4;
+  color: #059669;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+}
+.lab-card:hover .lab-view-btn { background: #059669; color: white; }
+.labs-empty {
+  text-align: center;
+  padding: 60px 20px;
+  color: #64748B;
+}
+.empty-icon { font-size: 48px; display: block; margin-bottom: 12px; }
+
+/* Lab Detail Page */
+.lab-detail-page { padding-bottom: 48px; }
+.lab-detail-hero {
+  position: relative;
+  background: linear-gradient(135deg, #059669, #10B981);
+  padding: 40px 0;
+  color: white;
+  overflow: hidden;
+}
+.lab-detail-hero-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.1;
+}
+.lab-detail-hero .container { position: relative; z-index: 1; }
+.lab-detail-header { display: flex; gap: 20px; align-items: flex-start; }
+.lab-detail-avatar { width: 80px; height: 80px; border-radius: 12px; object-fit: cover; }
+.lab-detail-info h1 { font-size: 28px; font-weight: 800; margin: 0 0 4px; }
+.lab-detail-meta {
+  display: flex;
+  gap: 16px;
+  font-size: 14px;
+  opacity: 0.9;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+.lab-detail-content {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 24px;
+  padding-top: 24px;
+}
+.tests-section h2 {
+  font-size: 20px;
+  font-weight: 700;
+  margin: 0 0 16px;
+  color: #1E293B;
+}
+.tests-filters {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+.test-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px;
+  background: white;
+  border: 1px solid #E2E8F0;
+  border-radius: 10px;
+  margin-bottom: 8px;
+  transition: all 0.2s;
+}
+.test-card:hover { border-color: #10B981; }
+.test-card-info { flex: 1; }
+.test-card-info h4 { font-size: 15px; font-weight: 600; margin: 0 0 4px; color: #1E293B; }
+.test-card-info p { font-size: 13px; color: #64748B; margin: 0 0 6px; }
+.test-card-meta { display: flex; gap: 12px; flex-wrap: wrap; }
+.test-meta-item { font-size: 12px; color: #64748B; display: flex; align-items: center; gap: 3px; }
+.test-card-pricing { text-align: right; margin-left: 16px; }
+.test-discount-price { font-size: 18px; font-weight: 800; color: #059669; }
+.test-original-price { font-size: 13px; color: #94A3B8; text-decoration: line-through; }
+.test-add-btn {
+  padding: 8px 16px;
+  background: #059669;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 6px;
+  transition: background 0.2s;
+}
+.test-add-btn:hover { background: #047857; }
+.test-add-btn.added { background: #6366F1; }
+
+.booking-sidebar {
+  position: sticky;
+  top: 24px;
+}
+.booking-summary {
+  background: white;
+  border: 1px solid #E2E8F0;
+  border-radius: 12px;
+  padding: 20px;
+}
+.booking-summary h3 { font-size: 16px; font-weight: 700; margin: 0 0 16px; }
+.selected-test {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid #F1F5F9;
+  font-size: 14px;
+}
+.selected-test:last-of-type { border-bottom: none; }
+.booking-total {
+  display: flex;
+  justify-content: space-between;
+  padding: 12px 0;
+  border-top: 2px solid #E2E8F0;
+  margin-top: 8px;
+  font-size: 16px;
+  font-weight: 700;
+}
+.booking-date-input { margin: 12px 0; }
+.booking-date-input label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px; color: #475569; }
+.booking-date-input input, .booking-date-input select {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #E2E8F0;
+  border-radius: 8px;
+  font-size: 14px;
+}
+.home-collection-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 0;
+  font-size: 14px;
+}
+.home-collection-toggle input[type="checkbox"] { width: 18px; height: 18px; }
+.book-test-btn {
+  width: 100%;
+  padding: 14px;
+  background: linear-gradient(135deg, #059669, #10B981);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  margin-top: 12px;
+  transition: opacity 0.2s;
+}
+.book-test-btn:hover { opacity: 0.9; }
+.book-test-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* My Lab Orders */
+.my-orders-page { padding: 24px 0 48px; }
+.my-orders-page h1 { font-size: 28px; font-weight: 800; margin: 0 0 24px; }
+.order-card {
+  background: white;
+  border: 1px solid #E2E8F0;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 12px;
+}
+.order-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.order-header h3 { font-size: 16px; margin: 0; }
+.order-status {
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+.order-status.pending { background: #FEF3C7; color: #92400E; }
+.order-status.confirmed { background: #DBEAFE; color: #1E40AF; }
+.order-status.sample_collected { background: #E0E7FF; color: #3730A3; }
+.order-status.processing { background: #F3E8FF; color: #6B21A8; }
+.order-status.completed { background: #DCFCE7; color: #166534; }
+.order-status.cancelled { background: #FEE2E2; color: #991B1B; }
+
+@media (max-width: 768px) {
+  .labs-grid { grid-template-columns: 1fr; }
+  .lab-detail-content { grid-template-columns: 1fr; }
+  .labs-hero h1 { font-size: 24px; }
+  .labs-search { flex-direction: column; }
+  .labs-filters { flex-direction: column; }
+}

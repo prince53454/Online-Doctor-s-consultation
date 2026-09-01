@@ -1,0 +1,81 @@
+.profile-page-content {
+  padding: 32px 0 60px;
+}
+
+.profile-card {
+  background: white;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.profile-header {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 32px;
+  background: linear-gradient(135deg, #4F46E5, #7C3AED);
+  color: white;
+}
+
+.profile-header h1 {
+  color: white;
+  font-size: 24px;
+  margin-bottom: 4px;
+}
+
+.profile-header p {
+  color: rgba(255,255,255,0.7);
+  font-size: 14px;
+  margin-bottom: 8px;
+}
+
+.profile-header .badge {
+  background: rgba(255,255,255,0.2);
+  color: white;
+  text-transform: capitalize;
+}
+
+.profile-header-actions {
+  margin-left: auto;
+}
+
+.profile-lg-avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: var(--radius-md);
+  border: 3px solid rgba(255,255,255,0.3);
+}
+
+.profile-details, .profile-section {
+  padding: 24px 32px;
+  border-bottom: 1px solid var(--gray-100);
+}
+
+.profile-details h3, .profile-section h3 {
+  font-size: 18px;
+  margin-bottom: 20px;
+}
+
+.details-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+.details-grid .form-group {
+  margin-bottom: 0;
+}
+
+.account-actions {
+  display: flex;
+  gap: 12px;
+}
+
+@media (max-width: 768px) {
+  .profile-header { flex-direction: column; text-align: center; }
+  .profile-header-actions { margin-left: 0; }
+  .details-grid { grid-template-columns: 1fr; }
+}

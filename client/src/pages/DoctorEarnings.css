@@ -1,0 +1,293 @@
+.earnings-page {
+  padding: 32px 0 60px;
+}
+
+.earnings-page h1 {
+  font-size: 28px;
+  margin-bottom: 4px;
+}
+
+.earnings-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.earn-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px 24px;
+  background: white;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--gray-100);
+}
+
+.earn-card.balance-card {
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  color: white;
+  border: none;
+}
+
+.earn-card.balance-card .earn-card-label { color: rgba(255,255,255,0.8); }
+.earn-card.balance-card .earn-card-value { color: white; }
+
+.earn-card-icon {
+  font-size: 28px;
+}
+
+.earn-card-label {
+  font-size: 13px;
+  color: var(--gray-500);
+}
+
+.earn-card-value {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--gray-900);
+}
+
+.earnings-cards-sm {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.earn-card-sm {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 18px;
+  background: white;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--gray-100);
+}
+
+.earn-card-sm span:first-child {
+  font-size: 20px;
+}
+
+.earn-sm-value {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.earn-sm-label {
+  font-size: 12px;
+  color: var(--gray-500);
+}
+
+.earnings-tabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 2px solid var(--gray-100);
+  margin-bottom: 24px;
+}
+
+/* Monthly Chart */
+.earnings-chart {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-around;
+  height: 200px;
+  padding: 20px 0;
+}
+
+.earn-chart-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+}
+
+.earn-chart-bar-wrap {
+  height: 160px;
+  width: 40px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.earn-chart-bar {
+  width: 100%;
+  background: linear-gradient(180deg, var(--primary), var(--primary-light));
+  border-radius: 6px 6px 0 0;
+  transition: height 0.5s ease;
+  position: relative;
+  cursor: pointer;
+}
+
+.earn-chart-bar:hover .earn-chart-tooltip {
+  opacity: 1;
+}
+
+.earn-chart-tooltip {
+  position: absolute;
+  top: -30px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--gray-900);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.earn-chart-label {
+  font-size: 12px;
+  color: var(--gray-500);
+  margin-top: 8px;
+  font-weight: 500;
+}
+
+.earn-chart-count {
+  font-size: 11px;
+  color: var(--gray-400);
+}
+
+/* Summary */
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.summary-item {
+  padding: 16px;
+  background: var(--gray-50);
+  border-radius: var(--radius);
+  text-align: center;
+}
+
+.summary-label {
+  display: block;
+  font-size: 12px;
+  color: var(--gray-500);
+  margin-bottom: 6px;
+}
+
+.summary-value {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+/* Transactions */
+.transactions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.transaction-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--gray-50);
+}
+
+.tx-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.tx-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--primary-50);
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.tx-name {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.tx-meta {
+  font-size: 12px;
+  color: var(--gray-500);
+}
+
+.tx-right {
+  text-align: right;
+}
+
+.tx-amount {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--success);
+}
+
+.tx-status {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-weight: 500;
+}
+
+.tx-status.unpaid { background: #FEF3C7; color: #92400E; }
+.tx-status.pending { background: #DBEAFE; color: #1E40AF; }
+.tx-status.paid { background: #D1FAE5; color: #065F46; }
+
+/* Payouts */
+.payouts-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.payout-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  background: var(--gray-50);
+  border-radius: var(--radius);
+}
+
+.payout-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.payout-status-badge {
+  padding: 4px 10px;
+  border-radius: var(--radius);
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.payout-status-badge.completed { background: #D1FAE5; color: #065F46; }
+.payout-status-badge.processing { background: #DBEAFE; color: #1E40AF; }
+.payout-status-badge.pending { background: #FEF3C7; color: #92400E; }
+.payout-status-badge.failed { background: #FEE2E2; color: #991B1B; }
+
+.payout-amount {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.payout-meta {
+  font-size: 12px;
+  color: var(--gray-500);
+}
+
+@media (max-width: 768px) {
+  .earnings-cards { grid-template-columns: 1fr; }
+  .summary-grid { grid-template-columns: 1fr 1fr; }
+}

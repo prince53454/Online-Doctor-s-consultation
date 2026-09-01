@@ -1,0 +1,65 @@
+version: '3.8'
+
+services:
+  # ── MongoDB ────────────────────────────
+  mongodb:
+    image: mongo:7
+    container_name: mediconnect-mongo
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    environment:
+      MONGO_INITDB_DATABASE: mediconnect_pro
+
+  # ── MediConnect App ─────────────────────
+  app:
+    build:
+      context: .
+      dockerfile: server/Dockerfile
+    container_name: mediconnect-app
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    depends_on:
+      - mongodb
+    environment:
+      NODE_ENV: production
+      PORT: 5000
+      MONGODB_URI: mongodb://mongodb:27017/mediconnect_pro
+      JWT_SECRET: change_this_to_a_long_random_string_in_production
+      JWT_EXPIRE: 30d
+      CLIENT_URL: http://localhost:5000
+      # Add your keys below:
+      # RAZORPAY_KEY_ID: rzp_test_xxxxx
+      # RAZORPAY_KEY_SECRET: xxxxx
+      # SMTP_HOST: smtp.gmail.com
+      # SMTP_PORT: 587
+      # SMTP_USER: your_email@gmail.com
+      # SMTP_PASS: your_app_password
+
+  # ── Seed (run once) ────────────────────
+  seed:
+    build:
+      context: .
+      dockerfile: server/Dockerfile
+    container_name: mediconnect-seed
+    depends_on:
+      - mongodb
+    environment:
+      MONGODB_URI: mongodb://mongodb:27017/mediconnect_pro
+      JWT_SECRET: change_this_to_a_long_random_string_in_production
+    command: >
+      sh -c "
+        echo '⏳ Waiting for MongoDB...' &&
+        sleep 5 &&
+        echo '🌱 Seeding database...' &&
+        node seeds/seed.js &&
+        echo '✅ Seeding complete!'
+      "
+    # Exit after seeding
+    restart: "no"
+
+volumes:
+  mongo_data:
