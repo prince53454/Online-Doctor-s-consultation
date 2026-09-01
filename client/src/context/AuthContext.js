@@ -39,16 +39,23 @@ function getPreviewCredentials() {
     return { email: 'patient@mediconnect.com', password: 'patient123', role: 'patient' };
   }
 
-  // 3. Check URL path
-  const path = window.location.pathname;
+  // 3. Check URL path (handles GitHub Pages subpath like /Online-Doctor-s-consultation/...)
+  const fullPath = window.location.pathname;
+  const path = fullPath.replace(/^\/[^/]+/, '') || '/'; // strip base path for GH Pages
   if (PREVIEW_ACCOUNTS[path]) return PREVIEW_ACCOUNTS[path];
   if (path.startsWith('/doctor/')) return PREVIEW_ACCOUNTS['/doctor/dashboard'];
-  if (path.startsWith('/admin/')) return PREVIEW_ACCOUNTS['/admin'];
+  if (path.startsWith('/admin')) return PREVIEW_ACCOUNTS['/admin'];
   if (path === '/' || path.startsWith('/doctors') || path.startsWith('/pharmacy') ||
       path.startsWith('/labs') || path.startsWith('/ai-checker') ||
       path.startsWith('/appointments') || path.startsWith('/reports') ||
       path.startsWith('/medical-records') || path.startsWith('/profile') ||
+      path.startsWith('/chat-history') || path.startsWith('/call-history') ||
+      path.startsWith('/health-metrics') || path.startsWith('/dashboard') ||
       path.startsWith('/book/') || path.startsWith('/chat/') || path.startsWith('/video/')) {
+    return { email: 'patient@mediconnect.com', password: 'patient123', role: 'patient' };
+  }
+  // Fallback: if on GitHub Pages (subpath exists), default to patient
+  if (fullPath !== '/' && fullPath !== '') {
     return { email: 'patient@mediconnect.com', password: 'patient123', role: 'patient' };
   }
   return null;
