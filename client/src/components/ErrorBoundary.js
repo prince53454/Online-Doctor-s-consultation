@@ -1,4 +1,5 @@
 import React from 'react';
+import { IS_DEVELOPMENT } from '../config/env';
 
 export default class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -62,7 +63,7 @@ export default class ErrorBoundary extends React.Component {
               Please try again or go back to the home page.
             </p>
 
-            {process.env.NODE_ENV === 'development' && this.state.error && (
+            {IS_DEVELOPMENT && this.state.error && (
               <details style={{
                 textAlign: 'left',
                 background: '#FEF2F2',

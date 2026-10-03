@@ -1,10 +1,29 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useNotifications } from '../context/NotificationContext';
+import toast from 'react-hot-toast';
 import './DoctorRegister.css';
 
 export default function DoctorPendingApproval() {
-  const { user, logout } = useAuth();
+  const { user, logout, refreshUser } = useAuth();
+  const { notifications } = useNotifications();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const latest = notifications[0];
+    if (!latest || !['doctor_approved', 'doctor_rejected'].includes(latest.type)) return;
+    refreshUser().then(updatedUser => {
+      if (updatedUser.isApproved) {
+        toast.success('Your doctor profile is approved.');
+        navigate('/doctor/dashboard', { replace: true });
+      } else if (latest.type === 'doctor_rejected') {
+        toast.error(latest.message);
+      }
+    }).catch(error => {
+      console.error('Failed to refresh doctor approval status:', error);
+    });
+  }, [notifications, refreshUser, navigate]);
 
   return (
     <div className="pending-page">
@@ -30,7 +49,12 @@ export default function DoctorPendingApproval() {
         </p>
 
         <div style={{display:'flex',flexDirection:'column',gap:10,alignItems:'center'}}>
-          <button className="btn btn-primary" onClick={() => window.location.reload()}>🔄 Refresh Status</button>
+          <button className="btn btn-primary" onClick={() => refreshUser().then(updatedUser => {
+            if (updatedUser.isApproved) navigate('/doctor/dashboard', { replace: true });
+          }).catch(error => {
+            console.error('Failed to refresh doctor approval status:', error);
+            toast.error('Could not refresh your approval status.');
+          })}>🔄 Refresh Status</button>
           <Link to="/" className="btn btn-ghost">← Back to Home</Link>
           <button className="btn btn-ghost" style={{color:'var(--gray-400)',fontSize:12}} onClick={logout}>Logout</button>
         </div>

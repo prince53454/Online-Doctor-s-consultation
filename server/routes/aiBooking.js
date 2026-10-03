@@ -1,4 +1,5 @@
 const express = require('express');
+const { randomUUID } = require('crypto');
 const router = express.Router();
 const Doctor = require('../models/Doctor');
 const Appointment = require('../models/Appointment');
@@ -245,7 +246,7 @@ router.post('/auto-book', protect, authorize('patient'), async (req, res) => {
       symptoms: symptoms || 'AI-assisted booking',
       isAIBooking: true,
       aiRecommendation: `AI selected ${bestSlot.startTime} - ${bestSlot.endTime} on ${bestDate.toDateString()} based on your preferences`,
-      roomId: require('uuid').v4(),
+      roomId: randomUUID(),
       payment: { amount: fee, currency: 'INR', status: 'pending' }
     });
 

@@ -3,15 +3,17 @@ import { useParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import io from 'socket.io-client';
+import { SOCKET_URL } from '../config/env';
 import './ChatConsultation.css';
 
-const socket = io(process.env.REACT_APP_API_URL?.replace('/api', '') || 'http://localhost:5000', {
-  withCredentials: true
+const socket = io(SOCKET_URL, {
+  withCredentials: true,
+  autoConnect: false
 });
 
 export default function ChatConsultation() {
   const { roomId } = useParams();
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
   const [consultation, setConsultation] = useState(null);
@@ -19,6 +21,10 @@ export default function ChatConsultation() {
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
+    if (!token) return undefined;
+    socket.auth = { token };
+    socket.connect();
+
     const init = async () => {
       try {
         const res = await api.get(`/consultations/${roomId}`);
@@ -28,7 +34,12 @@ export default function ChatConsultation() {
         const msgRes = await api.get(`/consultations/${roomId}/messages`);
         if (msgRes.data.messages) setMessages(msgRes.data.messages);
 
-        socket.emit('join-room', roomId);
+        await new Promise((resolve, reject) => {
+          socket.emit('join-room', roomId, (result) => {
+            if (result?.success) resolve();
+            else reject(new Error(result?.error || 'Unable to join consultation room'));
+          });
+        });
         await api.put(`/consultations/${roomId}/start`);
       } catch (error) {
         console.error(error);
@@ -48,8 +59,9 @@ export default function ChatConsultation() {
       socket.off('chat-message');
       socket.off('typing');
       socket.off('stop-typing');
+      socket.disconnect();
     };
-  }, [roomId]);
+  }, [roomId, token]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -73,18 +85,23 @@ export default function ChatConsultation() {
       timestamp: new Date()
     };
 
-    socket.emit('chat-message', { roomId, message: msgData });
-
     try {
-      await api.post(`/consultations/${roomId}/message`, {
+      const res = await api.post(`/consultations/${roomId}/message`, {
         content: newMessage,
         messageType: 'text'
       });
+      const message = {
+        ...msgData,
+        _id: res.data.message._id,
+        timestamp: res.data.message.timestamp
+      };
+      socket.emit('chat-message', { roomId, message });
+      setMessages(prev => [...prev, message]);
+      setNewMessage('');
     } catch (error) {
       console.error(error);
+      return;
     }
-
-    setNewMessage('');
   };
 
   const handleFileShare = async (type) => {

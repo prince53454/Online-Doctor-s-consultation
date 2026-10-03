@@ -74,7 +74,6 @@ const consultationSchema = new mongoose.Schema({
   }
 }, { timestamps: true });
 
-consultationSchema.index({ roomId: 1 });
 consultationSchema.index({ patient: 1, createdAt: -1 });
 consultationSchema.index({ doctor: 1, createdAt: -1 });
 

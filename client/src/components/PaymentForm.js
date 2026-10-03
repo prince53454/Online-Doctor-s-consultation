@@ -124,7 +124,7 @@ export default function PaymentForm({ appointmentId, amount, onSuccess, onError 
         <span className="pm-badge">💰 Wallets</span>
       </div>
 
-      {!paymentConfig?.razorpay?.configured && (
+      {paymentConfig?.mockMode && !paymentConfig?.razorpay?.configured && (
         <p style={{ textAlign: 'center', fontSize: 12, color: 'var(--gray-400)', marginTop: 8 }}>
           Development mode — payments auto-confirmed
         </p>

@@ -1,7 +1,5 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import toast from 'react-hot-toast';
 import './DemoPortal.css';
 
 const roles = [
@@ -12,8 +10,6 @@ const roles = [
     icon: '🏥',
     color: '#4F46E5',
     gradient: 'linear-gradient(135deg, #4F46E5, #7C3AED)',
-    email: 'patient@mediconnect.com',
-    password: 'patient123',
     features: [
       '🔍 Find & book doctors',
       '🤖 AI Symptom Checker',
@@ -30,8 +26,6 @@ const roles = [
     icon: '👨‍⚕️',
     color: '#059669',
     gradient: 'linear-gradient(135deg, #059669, #10B981)',
-    email: 'dr.rajesh@mediconnect.com',
-    password: 'doctor123',
     features: [
       '📊 Patient management',
       '📅 Schedule & bookings',
@@ -44,22 +38,7 @@ const roles = [
 ];
 
 export default function DemoPortal() {
-  const [loadingId, setLoadingId] = useState(null);
-  const { login, user } = useAuth();
   const navigate = useNavigate();
-
-  const handleQuickLogin = async (role) => {
-    setLoadingId(role.id);
-    try {
-      await login(role.email, role.password);
-      toast.success(`Logged in as ${role.title}!`);
-      navigate(role.redirect);
-    } catch (error) {
-      toast.error('Login failed: ' + (error.response?.data?.error || 'Unknown error'));
-    } finally {
-      setLoadingId(null);
-    }
-  };
 
   return (
     <div className="demo-portal">
@@ -72,11 +51,6 @@ export default function DemoPortal() {
         <p className="demo-subtitle">
           Choose a role below to explore the platform. Each role has a completely different frontend with unique features.
         </p>
-        {user && (
-          <div className="demo-current-user">
-            Currently logged in as: <strong>{user.name}</strong> ({user.role})
-          </div>
-        )}
         <div className="demo-tip">
           💡 <strong>Tip:</strong> Open each role in a separate <strong>Incognito/Private window</strong> to see all 3 dashboards simultaneously without session conflicts.
         </div>
@@ -96,27 +70,12 @@ export default function DemoPortal() {
                   <div key={i} className="demo-feature">{f}</div>
                 ))}
               </div>
-              <div className="demo-credentials">
-                <div className="demo-cred-row">
-                  <span className="demo-cred-label">Email:</span>
-                  <code>{role.email}</code>
-                </div>
-                <div className="demo-cred-row">
-                  <span className="demo-cred-label">Password:</span>
-                  <code>{role.password}</code>
-                </div>
-              </div>
               <button
                 className="demo-login-btn"
                 style={{ background: role.gradient }}
-                onClick={() => handleQuickLogin(role)}
-                disabled={loadingId === role.id}
+                onClick={() => navigate(role.redirect)}
               >
-                {loadingId === role.id ? (
-                  <span className="demo-loading">⏳ Logging in...</span>
-                ) : (
-                  <>🔓 Login as {role.id.charAt(0).toUpperCase() + role.id.slice(1)}</>
-                )}
+                Open {role.id.charAt(0).toUpperCase() + role.id.slice(1)} Portal
               </button>
             </div>
           </div>

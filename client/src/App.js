@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate as ReactRouterNavigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useNavigate as ReactRouterNavigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import ErrorBoundary from './components/ErrorBoundary';
@@ -12,43 +12,66 @@ import Footer from './components/layout/Footer';
 import DoctorNavbar from './components/layout/DoctorNavbar';
 
 // Pages
-import Home from './pages/Home';
-import Login from './pages/Login';
-import Register from './pages/Register';
-import DoctorRegister from './pages/DoctorRegister';
-import DoctorPendingApproval from './pages/DoctorPendingApproval';
-import Doctors from './pages/Doctors';
-import DoctorProfile from './pages/DoctorProfile';
-import BookAppointment from './pages/BookAppointment';
-import MyAppointments from './pages/MyAppointments';
-import VideoCall from './pages/VideoCall';
-import ChatConsultation from './pages/ChatConsultation';
-import Reports from './pages/Reports';
-import Profile from './pages/Profile';
-import AdminDashboard from './pages/admin/Dashboard';
-import AdminDoctors from './pages/admin/Doctors';
-import AdminAppointments from './pages/admin/Appointments';
-import AdminUsers from './pages/admin/Users';
-import AdminSettings from './pages/admin/Settings';
-import AdminRevenue from './pages/admin/Revenue';
-import DoctorEarnings from './pages/DoctorEarnings';
-import AISymptomChecker from './pages/AISymptomChecker';
-import DoctorDashboard from './pages/DoctorDashboard';
-import MedicalRecords from './pages/MedicalRecords';
-import Labs from './pages/Labs';
-import LabDetail from './pages/LabDetail';
-import Pharmacy from './pages/Pharmacy';
-import PharmacyCart from './pages/PharmacyCart';
-import MyPharmacyOrders from './pages/MyPharmacyOrders';
-import ChatHistory from './pages/ChatHistory';
-import CallHistory from './pages/CallHistory';
-import PatientDashboard from './pages/PatientDashboard';
-import { AboutPage, ContactPage, PrivacyPage, TermsPage } from './pages/StaticPages';
+const Home = React.lazy(() => import('./pages/Home'));
+const Login = React.lazy(() => import('./pages/Login'));
+const Register = React.lazy(() => import('./pages/Register'));
+const DoctorRegister = React.lazy(() => import('./pages/DoctorRegister'));
+const DoctorPendingApproval = React.lazy(() => import('./pages/DoctorPendingApproval'));
+const Doctors = React.lazy(() => import('./pages/Doctors'));
+const DoctorProfile = React.lazy(() => import('./pages/DoctorProfile'));
+const BookAppointment = React.lazy(() => import('./pages/BookAppointment'));
+const MyAppointments = React.lazy(() => import('./pages/MyAppointments'));
+const VideoCall = React.lazy(() => import('./pages/VideoCall'));
+const ChatConsultation = React.lazy(() => import('./pages/ChatConsultation'));
+const Reports = React.lazy(() => import('./pages/Reports'));
+const Profile = React.lazy(() => import('./pages/Profile'));
+const AdminDashboard = React.lazy(() => import('./pages/admin/Dashboard'));
+const AdminDoctors = React.lazy(() => import('./pages/admin/Doctors'));
+const AdminAppointments = React.lazy(() => import('./pages/admin/Appointments'));
+const AdminUsers = React.lazy(() => import('./pages/admin/Users'));
+const AdminSettings = React.lazy(() => import('./pages/admin/Settings'));
+const AdminRevenue = React.lazy(() => import('./pages/admin/Revenue'));
+const DoctorEarnings = React.lazy(() => import('./pages/DoctorEarnings'));
+const AISymptomChecker = React.lazy(() => import('./pages/AISymptomChecker'));
+const DoctorDashboard = React.lazy(() => import('./pages/DoctorDashboard'));
+const MedicalRecords = React.lazy(() => import('./pages/MedicalRecords'));
+const Labs = React.lazy(() => import('./pages/Labs'));
+const LabDetail = React.lazy(() => import('./pages/LabDetail'));
+const Pharmacy = React.lazy(() => import('./pages/Pharmacy'));
+const PharmacyCart = React.lazy(() => import('./pages/PharmacyCart'));
+const MyPharmacyOrders = React.lazy(() => import('./pages/MyPharmacyOrders'));
+const ChatHistory = React.lazy(() => import('./pages/ChatHistory'));
+const CallHistory = React.lazy(() => import('./pages/CallHistory'));
+const PatientDashboard = React.lazy(() => import('./pages/PatientDashboard'));
+const AboutPage = React.lazy(() => import('./pages/StaticPages').then((pages) => ({ default: pages.AboutPage })));
+const ContactPage = React.lazy(() => import('./pages/StaticPages').then((pages) => ({ default: pages.ContactPage })));
+const PrivacyPage = React.lazy(() => import('./pages/StaticPages').then((pages) => ({ default: pages.PrivacyPage })));
+const TermsPage = React.lazy(() => import('./pages/StaticPages').then((pages) => ({ default: pages.TermsPage })));
 import EmergencySOS from './components/EmergencySOS';
 import HealthMetrics from './pages/HealthMetrics';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import NotFound from './pages/NotFound';
+
+function RequireAuth({ roles, children }) {
+  const { user, loading } = useAuth();
+  const location = useLocation();
+
+  if (loading) return <div className="page-loader"><div className="spinner" /></div>;
+  if (!user) return <Navigate to="/login" state={{ from: location }} replace />;
+  if (!roles.includes(user.role)) {
+    const home = user.role === 'admin' ? '/admin' : user.role === 'doctor' ? '/doctor/dashboard' : '/dashboard';
+    return <Navigate to={home} replace />;
+  }
+  if (user.role === 'doctor' && !user.isApproved && location.pathname !== '/doctor/pending') {
+    return <Navigate to="/doctor/pending" replace />;
+  }
+  return children;
+}
+
+function protectedElement(roles, element) {
+  return <RequireAuth roles={roles}>{element}</RequireAuth>;
+}
 
 function PortalRedirect() {
   const { user, loading } = useAuth();
@@ -73,48 +96,49 @@ function PortalRedirect() {
 
 function AppRoutes() {
   return (
+    <React.Suspense fallback={<div className="page-loader"><div className="spinner" /></div>}>
     <Routes>
       {/* ── Patient Frontend (direct access) ── */}
       <Route path="/" element={window.__MEDICONNECT_PORTAL__ ? <><Navbar /><Home /><Footer /></> : <><Navbar /><Register /><Footer /></>} />
-      <Route path="/dashboard" element={<><Navbar /><PatientDashboard /><Footer /></>} />
+      <Route path="/dashboard" element={protectedElement(['patient'], <><Navbar /><PatientDashboard /><Footer /></>)} />
       <Route path="/doctors" element={<><Navbar /><Doctors /><Footer /></>} />
       <Route path="/doctors/:id" element={<><Navbar /><DoctorProfile /><Footer /></>} />
-      <Route path="/book/:doctorId" element={<><Navbar /><BookAppointment /><Footer /></>} />
-      <Route path="/appointments" element={<><Navbar /><MyAppointments /><Footer /></>} />
-      <Route path="/video/:roomId" element={<VideoCall />} />
-      <Route path="/chat/:roomId" element={<><Navbar /><ChatConsultation /><Footer /></>} />
-      <Route path="/reports" element={<><Navbar /><Reports /><Footer /></>} />
-      <Route path="/medical-records" element={<><Navbar /><MedicalRecords /><Footer /></>} />
-      <Route path="/health-metrics" element={<><Navbar /><HealthMetrics /><Footer /></>} />
-      <Route path="/profile" element={<><Navbar /><Profile /><Footer /></>} />
+      <Route path="/book/:doctorId" element={protectedElement(['patient'], <><Navbar /><BookAppointment /><Footer /></>)} />
+      <Route path="/appointments" element={protectedElement(['patient'], <><Navbar /><MyAppointments /><Footer /></>)} />
+      <Route path="/video/:roomId" element={protectedElement(['patient', 'doctor'], <VideoCall />)} />
+      <Route path="/chat/:roomId" element={protectedElement(['patient', 'doctor'], <><Navbar /><ChatConsultation /><Footer /></>)} />
+      <Route path="/reports" element={protectedElement(['patient'], <><Navbar /><Reports /><Footer /></>)} />
+      <Route path="/medical-records" element={protectedElement(['patient'], <><Navbar /><MedicalRecords /><Footer /></>)} />
+      <Route path="/health-metrics" element={protectedElement(['patient'], <><Navbar /><HealthMetrics /><Footer /></>)} />
+      <Route path="/profile" element={protectedElement(['patient', 'doctor'], <><Navbar /><Profile /><Footer /></>)} />
       <Route path="/labs" element={<><Navbar /><Labs /><Footer /></>} />
       <Route path="/labs/:id" element={<><Navbar /><LabDetail /><Footer /></>} />
       <Route path="/pharmacy" element={<><Navbar /><Pharmacy /><Footer /></>} />
-      <Route path="/pharmacy/cart" element={<><Navbar /><PharmacyCart /><Footer /></>} />
-      <Route path="/pharmacy/orders" element={<><Navbar /><MyPharmacyOrders /><Footer /></>} />
+      <Route path="/pharmacy/cart" element={protectedElement(['patient'], <><Navbar /><PharmacyCart /><Footer /></>)} />
+      <Route path="/pharmacy/orders" element={protectedElement(['patient'], <><Navbar /><MyPharmacyOrders /><Footer /></>)} />
       <Route path="/pharmacy/:id" element={<><Navbar /><Pharmacy /><Footer /></>} />
-      <Route path="/ai-checker" element={<><Navbar /><AISymptomChecker /><Footer /></>} />
-      <Route path="/chat-history" element={<><Navbar /><ChatHistory /><Footer /></>} />
-      <Route path="/call-history" element={<><Navbar /><CallHistory /><Footer /></>} />
+      <Route path="/ai-checker" element={protectedElement(['patient'], <><Navbar /><AISymptomChecker /><Footer /></>)} />
+      <Route path="/chat-history" element={protectedElement(['patient', 'doctor'], <><Navbar /><ChatHistory /><Footer /></>)} />
+      <Route path="/call-history" element={protectedElement(['patient', 'doctor'], <><Navbar /><CallHistory /><Footer /></>)} />
 
       {/* ── Doctor Frontend (direct access) ── */}
-      <Route path="/doctor/dashboard" element={<div style={{display:'flex'}}><DoctorNavbar /><div style={{marginLeft:260,flex:1,minHeight:'100vh'}}><DoctorDashboard /></div></div>} />
-      <Route path="/doctor/appointments" element={<div style={{display:'flex'}}><DoctorNavbar /><div style={{marginLeft:260,flex:1,minHeight:'100vh'}}><MyAppointments /></div></div>} />
-      <Route path="/doctor/patients" element={<div style={{display:'flex'}}><DoctorNavbar /><div style={{marginLeft:260,flex:1,minHeight:'100vh'}}><DoctorDashboard /></div></div>} />
-      <Route path="/doctor/earnings" element={<div style={{display:'flex'}}><DoctorNavbar /><div style={{marginLeft:260,flex:1,minHeight:'100vh'}}><DoctorEarnings /></div></div>} />
-      <Route path="/doctor/profile" element={<div style={{display:'flex'}}><DoctorNavbar /><div style={{marginLeft:260,flex:1,minHeight:'100vh'}}><Profile /></div></div>} />
-      <Route path="/doctor/chat-history" element={<div style={{display:'flex'}}><DoctorNavbar /><div style={{marginLeft:260,flex:1,minHeight:'100vh'}}><ChatHistory /></div></div>} />
-      <Route path="/doctor/call-history" element={<div style={{display:'flex'}}><DoctorNavbar /><div style={{marginLeft:260,flex:1,minHeight:'100vh'}}><CallHistory /></div></div>} />
+      <Route path="/doctor/dashboard" element={protectedElement(['doctor'], <div style={{display:'flex'}}><DoctorNavbar /><div style={{marginLeft:260,flex:1,minHeight:'100vh'}}><DoctorDashboard /></div></div>)} />
+      <Route path="/doctor/appointments" element={protectedElement(['doctor'], <div style={{display:'flex'}}><DoctorNavbar /><div style={{marginLeft:260,flex:1,minHeight:'100vh'}}><MyAppointments /></div></div>)} />
+      <Route path="/doctor/patients" element={protectedElement(['doctor'], <div style={{display:'flex'}}><DoctorNavbar /><div style={{marginLeft:260,flex:1,minHeight:'100vh'}}><DoctorDashboard /></div></div>)} />
+      <Route path="/doctor/earnings" element={protectedElement(['doctor'], <div style={{display:'flex'}}><DoctorNavbar /><div style={{marginLeft:260,flex:1,minHeight:'100vh'}}><DoctorEarnings /></div></div>)} />
+      <Route path="/doctor/profile" element={protectedElement(['doctor'], <div style={{display:'flex'}}><DoctorNavbar /><div style={{marginLeft:260,flex:1,minHeight:'100vh'}}><Profile /></div></div>)} />
+      <Route path="/doctor/chat-history" element={protectedElement(['doctor'], <div style={{display:'flex'}}><DoctorNavbar /><div style={{marginLeft:260,flex:1,minHeight:'100vh'}}><ChatHistory /></div></div>)} />
+      <Route path="/doctor/call-history" element={protectedElement(['doctor'], <div style={{display:'flex'}}><DoctorNavbar /><div style={{marginLeft:260,flex:1,minHeight:'100vh'}}><CallHistory /></div></div>)} />
       <Route path="/register/doctor" element={<DoctorRegister />} />
-      <Route path="/doctor/pending" element={<DoctorPendingApproval />} />
+      <Route path="/doctor/pending" element={protectedElement(['doctor'], <DoctorPendingApproval />)} />
 
       {/* ── Admin Dashboard (direct access) ── */}
-      <Route path="/admin" element={<AdminDashboard />} />
-      <Route path="/admin/doctors" element={<AdminDoctors />} />
-      <Route path="/admin/appointments" element={<AdminAppointments />} />
-      <Route path="/admin/users" element={<AdminUsers />} />
-      <Route path="/admin/settings" element={<AdminSettings />} />
-      <Route path="/admin/revenue" element={<AdminRevenue />} />
+      <Route path="/admin" element={protectedElement(['admin'], <AdminDashboard />)} />
+      <Route path="/admin/doctors" element={protectedElement(['admin'], <AdminDoctors />)} />
+      <Route path="/admin/appointments" element={protectedElement(['admin'], <AdminAppointments />)} />
+      <Route path="/admin/users" element={protectedElement(['admin'], <AdminUsers />)} />
+      <Route path="/admin/settings" element={protectedElement(['admin'], <AdminSettings />)} />
+      <Route path="/admin/revenue" element={protectedElement(['admin'], <AdminRevenue />)} />
 
       {/* ── Auth Pages (login required for real flow) ── */}
       <Route path="/about" element={<AboutPage />} />
@@ -128,6 +152,7 @@ function AppRoutes() {
 
       <Route path="*" element={<NotFound />} />
     </Routes>
+    </React.Suspense>
   );
 }
 

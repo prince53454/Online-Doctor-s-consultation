@@ -3,16 +3,18 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import io from 'socket.io-client';
+import { SOCKET_URL } from '../config/env';
 import toast from 'react-hot-toast';
 import './VideoCall.css';
 
-const socket = io(process.env.REACT_APP_API_URL?.replace('/api', '') || 'http://localhost:5000', {
-  withCredentials: true
+const socket = io(SOCKET_URL, {
+  withCredentials: true,
+  autoConnect: false
 });
 
 export default function VideoCall() {
   const { roomId } = useParams();
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const navigate = useNavigate();
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);
@@ -64,19 +66,33 @@ export default function VideoCall() {
   // Join call from waiting room
   const joinCall = async () => {
     try {
-      socket.emit('join-room', roomId);
-      socket.emit('video-signal', { roomId, signal: 'join', userId: user.id });
+      if (!videoConfig?.isConfigured || !videoConfig.roomUrl) {
+        toast.error('Video calling is unavailable because the video service is not configured.');
+        return;
+      }
+      if (!socket.connected) {
+        throw new Error('Real-time connection is not ready. Please try again.');
+      }
+      await new Promise((resolve, reject) => {
+        socket.emit('join-room', roomId, (result) => {
+          if (result?.success) resolve();
+          else reject(new Error(result?.error || 'Unable to join consultation room'));
+        });
+      });
+      socket.emit('video-signal', { roomId, signal: 'join' });
       await api.put(`/consultations/${roomId}/start`);
       setInWaitingRoom(false);
       setConnected(true);
     } catch (error) {
       console.error('Join call error:', error);
-      setInWaitingRoom(false);
-      setConnected(true);
+      toast.error(error.message || 'Unable to join the video consultation.');
     }
   };
 
   useEffect(() => {
+    if (!token) return undefined;
+    socket.auth = { token };
+    socket.connect();
     initCall();
 
     socket.on('video-signal', ({ signal, userId }) => {
@@ -102,8 +118,9 @@ export default function VideoCall() {
       socket.off('video-signal');
       socket.off('chat-message');
       socket.off('call-ended');
+      socket.disconnect();
     };
-  }, [roomId, user, navigate, initCall]);
+  }, [roomId, user, token, navigate, initCall]);
 
   // Duration timer
   useEffect(() => {
@@ -278,14 +295,14 @@ export default function VideoCall() {
             <h2>Video Consultation</h2>
             <span className="vc-duration">⏱ {formatDuration(duration)}</span>
           </div>
-          <span className="vc-status connected">● Connected via Daily.co</span>
+          <span className="vc-status connected">● Joining via Daily.co</span>
         </div>
 
         {/* Daily.co iframe */}
         <div style={{ flex: 1, position: 'relative' }}>
           <iframe
             ref={callFrameRef}
-            src={`${videoConfig.roomUrl}${videoConfig.patientToken ? '?t=' + videoConfig.patientToken : ''}`}
+            src={`${videoConfig.roomUrl}${videoConfig.token ? '?t=' + videoConfig.token : ''}`}
             allow="camera; microphone; fullscreen; speaker"
             style={{ width: '100%', height: '100%', border: 'none' }}
             title="Daily.co Video Call"

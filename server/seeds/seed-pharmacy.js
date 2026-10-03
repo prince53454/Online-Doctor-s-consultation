@@ -1,5 +1,10 @@
 const mongoose = require('mongoose');
-require('dotenv').config({ override: true });
+require('dotenv').config();
+
+if (process.env.NODE_ENV === 'production') {
+  console.error('Refusing to seed demo pharmacy data in production.');
+  process.exit(1);
+}
 
 const Medicine = require('../models/Medicine');
 const Pharmacy = require('../models/Pharmacy');

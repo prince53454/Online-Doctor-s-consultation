@@ -5,6 +5,7 @@ const Doctor = require('../models/Doctor');
 const Appointment = require('../models/Appointment');
 const { protect, authorize } = require('../middleware/auth');
 const { sendDoctorApprovalStatus } = require('../services/emailService');
+const { notifyDoctorApproval } = require('../services/notificationService');
 
 // All admin routes require authentication + admin role
 router.use(protect, authorize('admin'));
@@ -30,7 +31,7 @@ router.get('/dashboard', async (req, res) => {
       Doctor.countDocuments({ isApproved: false }),
       User.countDocuments({ role: 'patient' }),
       Appointment.countDocuments(),
-      Appointment.countDocuments({ status: { $in: ['pending', 'confirmed'] } }),
+      Appointment.countDocuments({ status: { $in: ['pending', 'confirmed', 'rescheduled'] } }),
       Appointment.countDocuments({ status: 'completed' }),
       Appointment.countDocuments({ status: 'cancelled' }),
       Appointment.find()
@@ -101,18 +102,21 @@ router.get('/doctors/pending', async (req, res) => {
 router.put('/doctors/:id/approve', async (req, res) => {
   try {
     const { approved } = req.body;
-    const doctor = await Doctor.findByIdAndUpdate(
-      req.params.id,
-      { isApproved: approved },
-      { new: true }
-    ).populate('user', 'name email avatar');
+    if (typeof approved !== 'boolean') {
+      return res.status(400).json({ success: false, error: 'approved must be a boolean' });
+    }
+    const doctor = await Doctor.findById(req.params.id);
 
     if (!doctor) {
       return res.status(404).json({ success: false, error: 'Doctor not found' });
     }
+    doctor.isApproved = approved;
+    await doctor.save();
+    await doctor.populate('user', 'name email avatar');
 
     // Send email notification
     sendDoctorApprovalStatus(doctor, approved).catch(console.error);
+    notifyDoctorApproval(req.app.get('io'), doctor, approved).catch(console.error);
 
     res.json({
       success: true,

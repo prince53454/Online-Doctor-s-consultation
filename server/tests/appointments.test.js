@@ -152,8 +152,12 @@ describe('Appointment Routes', () => {
   // ─── UPDATE STATUS ────────────────────
   describe('PUT /api/appointments/:id/status', () => {
     let appointmentId;
+    let otherPatientToken;
 
     beforeAll(async () => {
+      const otherPatient = await createTestUser({ email: `apt_other_${Date.now()}@test.com` });
+      otherPatientToken = generateToken(otherPatient._id, 'patient');
+
       // Book an appointment to update
       const res = await request(app)
         .post('/api/appointments')
@@ -169,6 +173,42 @@ describe('Appointment Routes', () => {
       if (res.status === 201) {
         appointmentId = res.body.appointment._id;
       }
+    });
+
+    it('should prevent another patient from changing an appointment', async () => {
+      const res = await request(app)
+        .put(`/api/appointments/${appointmentId}/status`)
+        .set('Authorization', `Bearer ${otherPatientToken}`)
+        .send({ status: 'cancelled' });
+
+      expect(res.status).toBe(403);
+    });
+
+    it('should prevent a patient from confirming their own appointment', async () => {
+      const res = await request(app)
+        .put(`/api/appointments/${appointmentId}/status`)
+        .set('Authorization', `Bearer ${patientToken}`)
+        .send({ status: 'confirmed' });
+
+      expect(res.status).toBe(403);
+    });
+
+    it('should reject unsupported status changes', async () => {
+      const res = await request(app)
+        .put(`/api/appointments/${appointmentId}/status`)
+        .set('Authorization', `Bearer ${doctorToken}`)
+        .send({ status: 'rescheduled' });
+
+      expect(res.status).toBe(400);
+    });
+
+    it('should prevent a doctor from completing a pending appointment', async () => {
+      const res = await request(app)
+        .put(`/api/appointments/${appointmentId}/status`)
+        .set('Authorization', `Bearer ${doctorToken}`)
+        .send({ status: 'completed' });
+
+      expect(res.status).toBe(409);
     });
 
     it('should confirm an appointment as doctor', async () => {
@@ -218,7 +258,13 @@ describe('Appointment Routes', () => {
       if (bookRes.status !== 201) return;
       const aptId = bookRes.body.appointment._id;
 
-      // Complete it as doctor
+      // Confirm before completing the appointment.
+      const confirmRes = await request(app)
+        .put(`/api/appointments/${aptId}/status`)
+        .set('Authorization', `Bearer ${doctorToken}`)
+        .send({ status: 'confirmed' });
+      expect(confirmRes.status).toBe(200);
+
       await request(app)
         .put(`/api/appointments/${aptId}/status`)
         .set('Authorization', `Bearer ${doctorToken}`)
@@ -262,8 +308,8 @@ describe('Appointment Routes', () => {
 // Helper: get next Monday's date in ISO format
 function getNextMonday() {
   const now = new Date();
-  const daysUntilMonday = (8 - now.getDay()) % 7 || 7;
+  const daysUntilMonday = (8 - now.getUTCDay()) % 7 || 7;
   const nextMonday = new Date(now);
-  nextMonday.setDate(now.getDate() + daysUntilMonday);
+  nextMonday.setUTCDate(now.getUTCDate() + daysUntilMonday);
   return nextMonday.toISOString().split('T')[0];
 }

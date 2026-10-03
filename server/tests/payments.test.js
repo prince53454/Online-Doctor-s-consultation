@@ -49,6 +49,7 @@ describe('Payment Routes', () => {
       expect(res.body.success).toBe(true);
       expect(res.body.razorpay).toBeDefined();
       expect(res.body.stripe).toBeDefined();
+      expect(res.body.mockMode).toBe(true);
     });
 
     it('should indicate mock mode when no keys set', async () => {
@@ -61,6 +62,25 @@ describe('Payment Routes', () => {
 
   // ─── RAZORPAY MOCK PAYMENT ────────────
   describe('POST /api/payments/razorpay/create-order', () => {
+    it('does not accept unconfigured mock payments in production', async () => {
+      if (!appointmentId) return;
+      const originalNodeEnv = process.env.NODE_ENV;
+      process.env.NODE_ENV = 'production';
+
+      try {
+        const res = await request(app)
+          .post('/api/payments/razorpay/create-order')
+          .set('Authorization', `Bearer ${patientToken}`)
+          .send({ appointmentId });
+
+        expect(res.status).toBe(503);
+        expect(res.body.success).toBe(false);
+      } finally {
+        if (originalNodeEnv === undefined) delete process.env.NODE_ENV;
+        else process.env.NODE_ENV = originalNodeEnv;
+      }
+    });
+
     it('should create order (mock mode auto-confirms)', async () => {
       if (!appointmentId) return;
 

@@ -9,12 +9,15 @@ const { sendPaymentReceipt, sendAppointmentConfirmation, sendDoctorBookingNotifi
 const revenueService = require('../services/revenueService');
 const { notifyPaymentReceived } = require('../services/notificationService');
 
+const isProduction = () => process.env.NODE_ENV === 'production';
+
 // @route   GET /api/payments/config
 // @desc    Get available payment providers
 // @access  Public
 router.get('/config', (req, res) => {
   res.json({
     success: true,
+    mockMode: !isProduction(),
     razorpay: {
       configured: razorpayService.isRazorpayConfigured(),
       keyId: process.env.RAZORPAY_KEY_ID || null // Public key only
@@ -46,21 +49,31 @@ router.post('/razorpay/create-order', protect, async (req, res) => {
     if (appointment.patient._id.toString() !== req.user.id) {
       return res.status(403).json({ success: false, error: 'Not authorized' });
     }
+    if (appointment.payment.status !== 'pending' || appointment.status === 'cancelled') {
+      return res.status(409).json({ success: false, error: 'Appointment is not eligible for payment' });
+    }
 
     const amount = appointment.payment.amount;
 
     if (!razorpayService.isRazorpayConfigured()) {
+      if (isProduction()) {
+        return res.status(503).json({ success: false, error: 'Razorpay payments are not configured' });
+      }
       // Mock mode — auto-confirm
       appointment.payment.status = 'completed';
       appointment.payment.paidAt = new Date();
+      appointment.payment.method = 'razorpay';
       appointment.payment.razorpayOrderId = 'mock_order_' + Date.now();
       appointment.payment.razorpayPaymentId = 'mock_pay_' + Date.now();
       appointment.status = 'confirmed';
       await appointment.save();
 
-      sendAppointmentConfirmation(appointment, appointment.patient, appointment.doctor).catch(() => {});
-      sendDoctorBookingNotification(appointment, appointment.patient, appointment.doctor).catch(() => {});
-      sendPaymentReceipt(appointment, appointment.patient, appointment.doctor).catch(() => {});
+      sendAppointmentConfirmation(appointment, appointment.patient, appointment.doctor)
+        .catch(error => console.error('Appointment confirmation email failed:', error.message));
+      sendDoctorBookingNotification(appointment, appointment.patient, appointment.doctor)
+        .catch(error => console.error('Doctor booking email failed:', error.message));
+      sendPaymentReceipt(appointment, appointment.patient, appointment.doctor)
+        .catch(error => console.error('Payment receipt email failed:', error.message));
       revenueService.recordTransaction(appointment).catch(console.error);
 
       const io = req.app.get('io');
@@ -80,6 +93,10 @@ router.post('/razorpay/create-order', protect, async (req, res) => {
       receipt: `apt_${appointment._id}`,
       notes: { appointmentId: appointment._id.toString(), patientId: req.user.id }
     });
+
+    appointment.payment.method = 'razorpay';
+    appointment.payment.razorpayOrderId = order.id;
+    await appointment.save();
 
     res.json({
       success: true,
@@ -101,7 +118,27 @@ router.post('/razorpay/verify', protect, async (req, res) => {
     const { appointmentId, razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
 
     if (!razorpayService.isRazorpayConfigured()) {
-      return res.status(400).json({ success: false, error: 'Payment already processed in mock mode' });
+      return res.status(isProduction() ? 503 : 400).json({
+        success: false,
+        error: isProduction() ? 'Razorpay payments are not configured' : 'Payment already processed in mock mode'
+      });
+    }
+
+    const appointment = await Appointment.findById(appointmentId)
+      .populate({ path: 'doctor', populate: { path: 'user', select: 'name email' } })
+      .populate('patient', 'name email');
+
+    if (!appointment) {
+      return res.status(404).json({ success: false, error: 'Appointment not found' });
+    }
+    if (appointment.patient._id.toString() !== req.user.id) {
+      return res.status(403).json({ success: false, error: 'Not authorized' });
+    }
+    if (appointment.payment.razorpayOrderId !== razorpay_order_id) {
+      return res.status(400).json({ success: false, error: 'Payment order does not match appointment' });
+    }
+    if (appointment.payment.status !== 'pending') {
+      return res.status(409).json({ success: false, error: 'Appointment payment has already been processed' });
     }
 
     const { verified } = razorpayService.verifyPayment({
@@ -114,24 +151,19 @@ router.post('/razorpay/verify', protect, async (req, res) => {
       return res.status(400).json({ success: false, error: 'Payment verification failed' });
     }
 
-    const appointment = await Appointment.findById(appointmentId)
-      .populate({ path: 'doctor', populate: { path: 'user', select: 'name email' } })
-      .populate('patient', 'name email');
-
-    if (!appointment) {
-      return res.status(404).json({ success: false, error: 'Appointment not found' });
-    }
-
     appointment.payment.status = 'completed';
     appointment.payment.paidAt = new Date();
-    appointment.payment.razorpayOrderId = razorpay_order_id;
+    appointment.payment.method = 'razorpay';
     appointment.payment.razorpayPaymentId = razorpay_payment_id;
     appointment.status = 'confirmed';
     await appointment.save();
 
-    sendAppointmentConfirmation(appointment, appointment.patient, appointment.doctor).catch(() => {});
-    sendDoctorBookingNotification(appointment, appointment.patient, appointment.doctor).catch(() => {});
-    sendPaymentReceipt(appointment, appointment.patient, appointment.doctor).catch(() => {});
+    sendAppointmentConfirmation(appointment, appointment.patient, appointment.doctor)
+      .catch(error => console.error('Appointment confirmation email failed:', error.message));
+    sendDoctorBookingNotification(appointment, appointment.patient, appointment.doctor)
+      .catch(error => console.error('Doctor booking email failed:', error.message));
+    sendPaymentReceipt(appointment, appointment.patient, appointment.doctor)
+      .catch(error => console.error('Payment receipt email failed:', error.message));
     revenueService.recordTransaction(appointment).catch(console.error);
 
     const io = req.app.get('io');
@@ -158,18 +190,19 @@ router.post('/razorpay/lab-order', protect, async (req, res) => {
     if (order.patient.toString() !== req.user.id) {
       return res.status(403).json({ success: false, error: 'Not authorized' });
     }
+    if (order.paymentStatus !== 'pending' || order.status === 'cancelled') {
+      return res.status(409).json({ success: false, error: 'Lab order is not eligible for payment' });
+    }
 
     const amount = order.finalAmount;
 
     if (!razorpayService.isRazorpayConfigured()) {
-      order.payment = {
-        status: 'completed',
-        method: 'razorpay',
-        razorpayOrderId: 'mock_order_' + Date.now(),
-        razorpayPaymentId: 'mock_pay_' + Date.now(),
-        paidAt: new Date(),
-        amount
-      };
+      if (isProduction()) {
+        return res.status(503).json({ success: false, error: 'Razorpay payments are not configured' });
+      }
+      order.paymentStatus = 'paid';
+      order.paymentMethod = 'razorpay';
+      order.paymentId = 'mock_pay_' + Date.now();
       order.status = 'confirmed';
       order.statusHistory.push({ status: 'confirmed', note: 'Payment completed (mock)' });
       await order.save();
@@ -187,6 +220,10 @@ router.post('/razorpay/lab-order', protect, async (req, res) => {
       receipt: `lab_${order._id}`,
       notes: { labOrderId: order._id.toString(), patientId: req.user.id }
     });
+
+    order.razorpayOrderId = rzpOrder.id;
+    order.paymentMethod = 'razorpay';
+    await order.save();
 
     res.json({
       success: true,
@@ -208,7 +245,24 @@ router.post('/razorpay/verify-lab', protect, async (req, res) => {
     const { labOrderId, razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
 
     if (!razorpayService.isRazorpayConfigured()) {
-      return res.status(400).json({ success: false, error: 'Already processed in mock mode' });
+      return res.status(isProduction() ? 503 : 400).json({
+        success: false,
+        error: isProduction() ? 'Razorpay payments are not configured' : 'Already processed in mock mode'
+      });
+    }
+
+    const order = await LabOrder.findById(labOrderId);
+    if (!order) {
+      return res.status(404).json({ success: false, error: 'Lab order not found' });
+    }
+    if (order.patient.toString() !== req.user.id) {
+      return res.status(403).json({ success: false, error: 'Not authorized' });
+    }
+    if (order.paymentStatus !== 'pending') {
+      return res.status(409).json({ success: false, error: 'Lab order payment has already been processed' });
+    }
+    if (order.razorpayOrderId !== razorpay_order_id) {
+      return res.status(400).json({ success: false, error: 'Payment order does not match lab order' });
     }
 
     const { verified } = razorpayService.verifyPayment({
@@ -221,19 +275,9 @@ router.post('/razorpay/verify-lab', protect, async (req, res) => {
       return res.status(400).json({ success: false, error: 'Payment verification failed' });
     }
 
-    const order = await LabOrder.findById(labOrderId).populate('lab', 'name');
-    if (!order) {
-      return res.status(404).json({ success: false, error: 'Lab order not found' });
-    }
-
-    order.payment = {
-      status: 'completed',
-      method: 'razorpay',
-      razorpayOrderId: razorpay_order_id,
-      razorpayPaymentId: razorpay_payment_id,
-      paidAt: new Date(),
-      amount: order.finalAmount
-    };
+    order.paymentStatus = 'paid';
+    order.paymentMethod = 'razorpay';
+    order.paymentId = razorpay_payment_id;
     order.status = 'confirmed';
     order.statusHistory.push({ status: 'confirmed', note: 'Payment verified' });
     await order.save();
@@ -262,10 +306,17 @@ router.post('/create-intent', protect, async (req, res) => {
     if (appointment.patient._id.toString() !== req.user.id) {
       return res.status(403).json({ success: false, error: 'Not authorized' });
     }
+    if (appointment.payment.status !== 'pending' || appointment.status === 'cancelled') {
+      return res.status(409).json({ success: false, error: 'Appointment is not eligible for payment' });
+    }
 
     if (!isStripeConfigured()) {
+      if (isProduction()) {
+        return res.status(503).json({ success: false, error: 'Stripe payments are not configured' });
+      }
       appointment.payment.status = 'completed';
       appointment.payment.paidAt = new Date();
+      appointment.payment.method = 'stripe';
       appointment.payment.stripePaymentId = 'mock_' + Date.now();
       appointment.status = 'confirmed';
       await appointment.save();
@@ -300,16 +351,27 @@ router.post('/confirm', protect, async (req, res) => {
       .populate('patient', 'name email');
 
     if (!appointment) return res.status(404).json({ success: false, error: 'Appointment not found' });
+    if (appointment.patient._id.toString() !== req.user.id) {
+      return res.status(403).json({ success: false, error: 'Not authorized' });
+    }
+    if (!paymentId) {
+      return res.status(400).json({ success: false, error: 'Payment ID is required' });
+    }
 
-    if (isStripeConfigured() && paymentId && !paymentId.startsWith('mock_')) {
-      const payment = await confirmPayment(paymentId);
-      if (payment.status !== 'succeeded') {
-        return res.status(400).json({ success: false, error: 'Payment not completed' });
-      }
+    if (!isStripeConfigured()) {
+      return res.status(isProduction() ? 503 : 400).json({
+        success: false,
+        error: isProduction() ? 'Stripe payments are not configured' : 'Stripe payment verification is unavailable'
+      });
+    }
+    const payment = await confirmPayment(paymentId);
+    if (payment.status !== 'succeeded' || payment.metadata?.appointmentId !== appointment._id.toString()) {
+      return res.status(400).json({ success: false, error: 'Payment not completed for this appointment' });
     }
 
     appointment.payment.status = 'completed';
     appointment.payment.paidAt = new Date();
+    appointment.payment.method = 'stripe';
     appointment.payment.stripePaymentId = paymentId;
     appointment.status = 'confirmed';
     await appointment.save();
@@ -330,6 +392,12 @@ router.post('/refund', protect, async (req, res) => {
     const { appointmentId } = req.body;
     const appointment = await Appointment.findById(appointmentId);
     if (!appointment) return res.status(404).json({ success: false, error: 'Appointment not found' });
+    if (appointment.patient.toString() !== req.user.id && req.user.role !== 'admin') {
+      return res.status(403).json({ success: false, error: 'Not authorized' });
+    }
+    if (appointment.status !== 'cancelled') {
+      return res.status(400).json({ success: false, error: 'Appointment must be cancelled before requesting a refund' });
+    }
     if (appointment.payment.status !== 'completed') {
       return res.status(400).json({ success: false, error: 'No payment to refund' });
     }
@@ -339,11 +407,25 @@ router.post('/refund', protect, async (req, res) => {
     let refundAmount = hoursUntil > 24 ? appointment.payment.amount : hoursUntil > 12 ? appointment.payment.amount * 0.5 : 0;
 
     if (refundAmount > 0) {
-      if (appointment.payment.razorpayPaymentId && !appointment.payment.razorpayPaymentId.startsWith('mock_')) {
+      if (appointment.payment.method === 'razorpay' && appointment.payment.razorpayPaymentId) {
+        if (isProduction() && !razorpayService.isRazorpayConfigured()) {
+          return res.status(503).json({ success: false, error: 'Razorpay refunds are not configured' });
+        }
         await razorpayService.createRefund({ paymentId: appointment.payment.razorpayPaymentId, amount: refundAmount });
-      } else if (appointment.payment.stripePaymentId && !appointment.payment.stripePaymentId.startsWith('mock_')) {
-        const { createRefund } = require('../services/stripeService');
-        await createRefund({ paymentIntentId: appointment.payment.stripePaymentId, amount: refundAmount, reason: 'requested_by_customer' });
+      } else if (appointment.payment.method === 'stripe' && appointment.payment.stripePaymentId) {
+        if (appointment.payment.stripePaymentId.startsWith('mock_')) {
+          if (isProduction()) {
+            return res.status(400).json({ success: false, error: 'Mock payments cannot be refunded in production' });
+          }
+        } else {
+          if (!isStripeConfigured()) {
+            return res.status(503).json({ success: false, error: 'Stripe refunds are not configured' });
+          }
+          const { createRefund } = require('../services/stripeService');
+          await createRefund({ paymentIntentId: appointment.payment.stripePaymentId, amount: refundAmount, reason: 'requested_by_customer' });
+        }
+      } else {
+        return res.status(400).json({ success: false, error: 'Payment provider transaction was not found' });
       }
     }
 

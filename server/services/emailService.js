@@ -2,20 +2,27 @@ const nodemailer = require('nodemailer');
 
 let transporter;
 
+const isConfigured = Boolean(
+  process.env.SMTP_HOST &&
+  process.env.SMTP_USER &&
+  process.env.SMTP_PASS &&
+  !process.env.SMTP_USER.includes('your_') &&
+  !process.env.SMTP_PASS.includes('your_')
+);
+
 function getTransporter() {
   if (transporter) return transporter;
-
-  const isConfigured = process.env.SMTP_USER && !process.env.SMTP_USER.includes('your_');
 
   if (!isConfigured) {
     console.warn('⚠️  Email service not configured. Emails will be logged to console.');
     return null;
   }
 
+  const port = Number(process.env.SMTP_PORT) || 587;
   transporter = nodemailer.createTransport({
     host: process.env.SMTP_HOST || 'smtp.gmail.com',
-    port: Number(process.env.SMTP_PORT) || 587,
-    secure: false,
+    port,
+    secure: port === 465,
     auth: {
       user: process.env.SMTP_USER,
       pass: process.env.SMTP_PASS
@@ -38,6 +45,9 @@ async function sendEmail({ to, subject, html, text }) {
   };
 
   if (!transport) {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('Email service is not configured');
+    }
     console.log(`📧 [DEV] Email to ${to}: ${subject}`);
     return { messageId: 'dev_' + Date.now(), accepted: [to] };
   }
@@ -48,6 +58,7 @@ async function sendEmail({ to, subject, html, text }) {
     return result;
   } catch (error) {
     console.error('📧 Email send error:', error.message);
+    if (process.env.NODE_ENV === 'production') throw error;
     // Don't throw — email failure shouldn't block the booking
     return { messageId: 'failed', error: error.message };
   }
@@ -285,6 +296,7 @@ async function sendDoctorApprovalStatus(doctor, approved) {
 }
 
 module.exports = {
+  isConfigured,
   sendEmail,
   sendAppointmentConfirmation,
   sendAppointmentCancellation,

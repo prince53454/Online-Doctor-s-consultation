@@ -1,11 +1,16 @@
 const mongoose = require('mongoose');
+const { randomUUID } = require('crypto');
 const path = require('path');
-require('dotenv').config({ path: path.join(__dirname, '../.env'), override: true });
+require('dotenv').config({ path: path.join(__dirname, '../.env') });
+
+if (process.env.NODE_ENV === 'production') {
+  console.error('Refusing to seed demo bookings in production.');
+  process.exit(1);
+}
 
 const User = require('../models/User');
 const Doctor = require('../models/Doctor');
 const Appointment = require('../models/Appointment');
-const { v4: uuidv4 } = require('uuid');
 
 async function seedBookings() {
   await mongoose.connect(process.env.MONGODB_URI);
@@ -67,7 +72,7 @@ async function seedBookings() {
       symptoms: symptomsList[i % symptomsList.length],
       medicalHistory: i % 3 === 0 ? 'No significant medical history' : '',
       status: statuses[i % statuses.length],
-      roomId: uuidv4(),
+      roomId: randomUUID(),
       payment: {
         amount: types[i % types.length] === 'in-person' ? 1000 : types[i % types.length] === 'video' ? 1500 : 800,
         currency: 'INR',
@@ -96,7 +101,7 @@ async function seedBookings() {
     timeSlot: { startTime: '11:00', endTime: '12:00', isAvailable: false },
     symptoms: 'Follow-up for blood test results and medication review',
     status: 'confirmed',
-    roomId: uuidv4(),
+    roomId: randomUUID(),
     payment: { amount: 1500, currency: 'INR', status: 'completed' },
     rescheduleHistory: [{
       previousDate: new Date(Date.now() + 2 * 86400000),

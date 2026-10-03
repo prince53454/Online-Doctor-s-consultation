@@ -257,8 +257,14 @@ router.post('/orders/:id/pay', protect, async (req, res) => {
   try {
     const order = await PharmacyOrder.findOne({ _id: req.params.id, patient: req.user.id });
     if (!order) return res.status(404).json({ success: false, error: 'Order not found' });
+    if (order.payment.status !== 'pending' || order.status === 'cancelled') {
+      return res.status(409).json({ success: false, error: 'Order is not eligible for payment' });
+    }
 
     if (!razorpayService.isRazorpayConfigured()) {
+      if (process.env.NODE_ENV === 'production') {
+        return res.status(503).json({ success: false, error: 'Razorpay payments are not configured' });
+      }
       order.payment = {
         method: 'razorpay',
         status: 'completed',
@@ -285,6 +291,9 @@ router.post('/orders/:id/pay', protect, async (req, res) => {
       notes: { pharmacyOrderId: order._id.toString(), patientId: req.user.id }
     });
 
+    order.payment.razorpayOrderId = rzpOrder.id;
+    await order.save();
+
     res.json({
       success: true,
       order: rzpOrder,
@@ -304,10 +313,21 @@ router.post('/orders/:id/verify', protect, async (req, res) => {
     const order = await PharmacyOrder.findOne({ _id: req.params.id, patient: req.user.id });
     if (!order) return res.status(404).json({ success: false, error: 'Order not found' });
 
-    if (razorpayService.isRazorpayConfigured()) {
-      const { verified } = razorpayService.verifyPayment({ razorpay_order_id, razorpay_payment_id, razorpay_signature });
-      if (!verified) return res.status(400).json({ success: false, error: 'Payment verification failed' });
+    if (!razorpayService.isRazorpayConfigured()) {
+      return res.status(process.env.NODE_ENV === 'production' ? 503 : 400).json({
+        success: false,
+        error: process.env.NODE_ENV === 'production' ? 'Razorpay payments are not configured' : 'Payment already processed in mock mode'
+      });
     }
+    if (order.payment.status !== 'pending') {
+      return res.status(409).json({ success: false, error: 'Order payment has already been processed' });
+    }
+    if (order.payment.razorpayOrderId !== razorpay_order_id) {
+      return res.status(400).json({ success: false, error: 'Payment order does not match pharmacy order' });
+    }
+
+    const { verified } = razorpayService.verifyPayment({ razorpay_order_id, razorpay_payment_id, razorpay_signature });
+    if (!verified) return res.status(400).json({ success: false, error: 'Payment verification failed' });
 
     order.payment = {
       method: 'razorpay',

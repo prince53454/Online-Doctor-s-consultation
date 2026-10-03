@@ -1,5 +1,10 @@
 const mongoose = require('mongoose');
-require('dotenv').config({ override: true });
+require('dotenv').config();
+
+if (process.env.NODE_ENV === 'production') {
+  console.error('Refusing to seed demo notifications in production.');
+  process.exit(1);
+}
 
 const Notification = require('../models/Notification');
 const Appointment = require('../models/Appointment');

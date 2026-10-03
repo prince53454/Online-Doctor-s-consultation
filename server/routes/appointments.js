@@ -1,12 +1,19 @@
 const express = require('express');
+const { randomUUID } = require('crypto');
 const router = express.Router();
 const { body, validationResult } = require('express-validator');
 const Appointment = require('../models/Appointment');
 const Doctor = require('../models/Doctor');
-const User = require('../models/User');
 const { protect, authorize } = require('../middleware/auth');
-const { v4: uuidv4 } = require('uuid');
-const { notifyDoctorBooked, notifyPatientConfirmed, notifyAppointmentCancelled, notifyPaymentReceived } = require('../services/notificationService');
+const {
+  createNotification,
+  notifyDoctorBooked,
+  notifyPatientConfirmed,
+  notifyAppointmentCancelled,
+  notifyAppointmentRescheduled,
+  notifyAdminsAppointment,
+  notifyReviewReceived
+} = require('../services/notificationService');
 
 // @route   POST /api/appointments
 // @desc    Book an appointment
@@ -34,7 +41,15 @@ router.post('/', protect, authorize('patient'), [
 
     // Check slot availability
     const appointmentDate = new Date(date);
-    const dayName = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][appointmentDate.getDay()];
+    appointmentDate.setUTCHours(0, 0, 0, 0);
+    const requestedDay = new Date(appointmentDate);
+    const today = new Date();
+    requestedDay.setUTCHours(0, 0, 0, 0);
+    today.setUTCHours(0, 0, 0, 0);
+    if (requestedDay < today) {
+      return res.status(400).json({ success: false, error: 'Appointments must be booked for today or a future date' });
+    }
+    const dayName = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][appointmentDate.getUTCDay()];
 
     const dayAvailability = doctor.availability.find(a => a.day === dayName);
     if (!dayAvailability) {
@@ -78,7 +93,7 @@ router.post('/', protect, authorize('patient'), [
       medicalHistory,
       isAIBooking: isAIBooking || false,
       aiRecommendation,
-      roomId: uuidv4(),
+      roomId: randomUUID(),
       payment: { amount: fee, currency: 'INR', status: 'pending' }
     });
 
@@ -110,7 +125,7 @@ router.get('/', protect, async (req, res) => {
       query.patient = req.user.id;
     } else if (req.user.role === 'doctor') {
       const doctor = await Doctor.findOne({ user: req.user.id });
-      if (doctor) query.doctor = doctor._id;
+      query.doctor = doctor?._id || null;
     }
 
     if (status) query.status = status;
@@ -166,7 +181,7 @@ router.get('/:id', protect, async (req, res) => {
     // Check authorization
     const isPatient = appointment.patient._id.toString() === req.user.id;
     const doctor = await Doctor.findOne({ user: req.user.id });
-    const isDoctor = doctor && appointment.doctor._id.toString() === doctor._id.toString();
+    const isDoctor = doctor?.isApproved && appointment.doctor._id.toString() === doctor._id.toString();
     const isAdmin = req.user.role === 'admin';
 
     if (!isPatient && !isDoctor && !isAdmin) {
@@ -184,16 +199,41 @@ router.get('/:id', protect, async (req, res) => {
 // @access  Private
 router.put('/:id/status', protect, async (req, res) => {
   try {
-    const { status, cancelledBy, cancellationReason } = req.body;
+    const { status, cancellationReason } = req.body;
+    if (!['confirmed', 'cancelled', 'completed'].includes(status)) {
+      return res.status(400).json({ success: false, error: 'Invalid appointment status' });
+    }
+
     const appointment = await Appointment.findById(req.params.id);
 
     if (!appointment) {
       return res.status(404).json({ success: false, error: 'Appointment not found' });
     }
 
-    appointment.status = status;
-    if (cancelledBy) appointment.cancelledBy = cancelledBy;
-    if (cancellationReason) appointment.cancellationReason = cancellationReason;
+    const doctor = await Doctor.findOne({ user: req.user.id });
+    const isPatient = appointment.patient.toString() === req.user.id;
+    const isDoctor = doctor?.isApproved && appointment.doctor.toString() === doctor._id.toString();
+    const isAdmin = req.user.role === 'admin';
+    if (!isPatient && !isDoctor && !isAdmin) {
+      return res.status(403).json({ success: false, error: 'Not authorized' });
+    }
+
+    const activeStatuses = ['pending', 'confirmed', 'rescheduled'];
+    if (status === 'confirmed' && appointment.status !== 'pending' && appointment.status !== 'rescheduled') {
+      return res.status(409).json({ success: false, error: 'Only pending or rescheduled appointments can be confirmed' });
+    }
+    if (status === 'completed' && (!isDoctor || appointment.status !== 'confirmed')) {
+      return res.status(409).json({ success: false, error: 'Only the assigned doctor can complete a confirmed appointment' });
+    }
+    if (status === 'cancelled' && !activeStatuses.includes(appointment.status)) {
+      return res.status(409).json({ success: false, error: 'Only active appointments can be cancelled' });
+    }
+    if (status === 'confirmed' && !(isDoctor || isAdmin)) {
+      return res.status(403).json({ success: false, error: 'Only the assigned doctor or an admin can confirm appointments' });
+    }
+    if (status === 'completed' && !isDoctor) {
+      return res.status(403).json({ success: false, error: 'Only the assigned doctor can complete appointments' });
+    }
 
     // Handle cancellation refunds
     if (status === 'cancelled') {
@@ -206,8 +246,11 @@ router.put('/:id/status', protect, async (req, res) => {
       } else if (hoursUntil > 12) {
         appointment.refundAmount = appointment.payment.amount * 0.5;
       }
+      appointment.cancelledBy = req.user.role;
+      appointment.cancellationReason = cancellationReason || '';
     }
 
+    appointment.status = status;
     await appointment.save();
 
     await appointment.populate([
@@ -217,13 +260,39 @@ router.put('/:id/status', protect, async (req, res) => {
 
     // Send real-time notifications
     const io = req.app.get('io');
-    if (status === 'confirmed') {
+    const actorRole = isAdmin ? 'admin' : isDoctor ? 'doctor' : 'patient';
+    if (status === 'confirmed' && actorRole === 'doctor') {
       notifyPatientConfirmed(io, appointment, appointment.patient, appointment.doctor).catch(console.error);
     }
-    if (status === 'cancelled') {
-      const recipientId = req.user.role === 'doctor' ? appointment.patient._id : (appointment.doctor.user?._id || appointment.doctor.user);
-      notifyAppointmentCancelled(io, appointment, recipientId, req.user.role, cancellationReason).catch(console.error);
+    if (status === 'confirmed' && actorRole === 'admin') {
+      createNotification(io, {
+        recipientId: appointment.patient._id,
+        senderId: req.user.id,
+        type: 'appointment_confirmed',
+        title: '✅ Appointment Confirmed',
+        message: 'An administrator confirmed your appointment.',
+        data: { appointmentId: appointment._id, doctorId: appointment.doctor._id, roomId: appointment.roomId, status }
+      }).catch(console.error);
     }
+    if (status === 'cancelled') {
+      const recipients = actorRole === 'admin'
+        ? [appointment.patient._id, appointment.doctor.user?._id || appointment.doctor.user]
+        : [actorRole === 'doctor' ? appointment.patient._id : (appointment.doctor.user?._id || appointment.doctor.user)];
+      recipients.forEach(recipientId => notifyAppointmentCancelled(
+        io, appointment, recipientId, actorRole, cancellationReason
+      ).catch(console.error));
+    }
+    if (status === 'completed') {
+      createNotification(io, {
+        recipientId: appointment.patient._id,
+        senderId: req.user.id,
+        type: 'appointment_status_updated',
+        title: 'Consultation Completed',
+        message: 'Your doctor marked the consultation as completed.',
+        data: { appointmentId: appointment._id, doctorId: appointment.doctor._id, status }
+      }).catch(console.error);
+    }
+    notifyAdminsAppointment(io, appointment, status, actorRole).catch(console.error);
 
     res.json({ success: true, appointment });
   } catch (error) {
@@ -240,12 +309,37 @@ router.put('/:id/consultation', protect, authorize('doctor'), async (req, res) =
     if (!appointment) {
       return res.status(404).json({ success: false, error: 'Appointment not found' });
     }
+    const doctor = await Doctor.findOne({ user: req.user.id });
+    if (!doctor?.isApproved || appointment.doctor.toString() !== doctor._id.toString()) {
+      return res.status(403).json({ success: false, error: 'Only the assigned doctor can update consultation notes' });
+    }
+    if (!['confirmed', 'completed'].includes(appointment.status)) {
+      return res.status(409).json({ success: false, error: 'Consultation notes can only be added to confirmed or completed appointments' });
+    }
 
     appointment.consultation = {
       ...appointment.consultation,
-      ...req.body
+      notes: req.body.notes,
+      diagnosis: req.body.diagnosis,
+      prescription: req.body.prescription,
+      followUpDate: req.body.followUpDate,
+      labTests: req.body.labTests,
+      referrals: req.body.referrals
     };
     await appointment.save();
+    await appointment.populate('patient', 'name email avatar');
+    await appointment.populate({ path: 'doctor', populate: { path: 'user', select: 'name avatar' } });
+
+    if (appointment.patient?._id) {
+      createNotification(req.app.get('io'), {
+        recipientId: appointment.patient._id,
+        senderId: req.user.id,
+        type: 'prescription_shared',
+        title: 'Consultation Notes Updated',
+        message: 'Your doctor added consultation notes or a prescription.',
+        data: { appointmentId: appointment._id, doctorId: appointment.doctor._id, status: appointment.status }
+      }).catch(console.error);
+    }
 
     res.json({ success: true, appointment });
   } catch (error) {
@@ -269,9 +363,15 @@ router.post('/:id/rate', protect, authorize('patient'), [
     if (!appointment) {
       return res.status(404).json({ success: false, error: 'Appointment not found' });
     }
+    if (appointment.patient.toString() !== req.user.id) {
+      return res.status(403).json({ success: false, error: 'Only the patient who attended can rate this appointment' });
+    }
 
     if (appointment.status !== 'completed') {
       return res.status(400).json({ success: false, error: 'Can only rate completed appointments' });
+    }
+    if (appointment.rating?.score) {
+      return res.status(409).json({ success: false, error: 'This appointment has already been rated' });
     }
 
     appointment.rating = {
@@ -295,6 +395,10 @@ router.post('/:id/rate', protect, authorize('patient'), [
       await doctor.save();
     }
 
+    if (doctor) {
+      notifyReviewReceived(req.app.get('io'), appointment, req.user, doctor).catch(console.error);
+    }
+
     res.json({ success: true, appointment });
   } catch (error) {
     res.status(500).json({ success: false, error: 'Server error' });
@@ -304,8 +408,17 @@ router.post('/:id/rate', protect, authorize('patient'), [
 // @route   PUT /api/appointments/:id/reschedule
 // @desc    Reschedule appointment (doctor or patient)
 // @access  Private
-router.put('/:id/reschedule', protect, async (req, res) => {
+router.put('/:id/reschedule', protect, [
+  body('date').isISO8601().withMessage('Valid date is required'),
+  body('timeSlot').isObject().withMessage('Time slot is required'),
+  body('timeSlot.startTime').isString().notEmpty().withMessage('Start time is required'),
+  body('timeSlot.endTime').isString().notEmpty().withMessage('End time is required')
+], async (req, res) => {
   try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ success: false, errors: errors.array() });
+    }
     const { date, timeSlot, reason } = req.body;
     const appointment = await Appointment.findById(req.params.id);
 
@@ -316,20 +429,37 @@ router.put('/:id/reschedule', protect, async (req, res) => {
     // Check authorization
     const isPatient = appointment.patient.toString() === req.user.id;
     const doctor = await Doctor.findOne({ user: req.user.id });
-    const isDoctor = doctor && appointment.doctor.toString() === doctor._id.toString();
+    const isDoctor = doctor?.isApproved && appointment.doctor.toString() === doctor._id.toString();
 
     if (!isPatient && !isDoctor) {
       return res.status(403).json({ success: false, error: 'Not authorized' });
     }
+    if (!['pending', 'confirmed', 'rescheduled'].includes(appointment.status)) {
+      return res.status(409).json({ success: false, error: 'Only active appointments can be rescheduled' });
+    }
 
     // Verify new slot availability
     const newDate = new Date(date);
-    const dayName = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][newDate.getDay()];
+    newDate.setUTCHours(0, 0, 0, 0);
+    const requestedDay = new Date(newDate);
+    const today = new Date();
+    requestedDay.setUTCHours(0, 0, 0, 0);
+    today.setUTCHours(0, 0, 0, 0);
+    if (requestedDay < today) {
+      return res.status(400).json({ success: false, error: 'Appointments cannot be rescheduled to a past date' });
+    }
+    const dayName = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][newDate.getUTCDay()];
 
     const doctorProfile = await Doctor.findById(appointment.doctor);
-    const dayAvailability = doctorProfile.availability.find(a => a.day === dayName);
+    const dayAvailability = doctorProfile?.availability.find(a => a.day === dayName);
     if (!dayAvailability) {
       return res.status(400).json({ success: false, error: 'Doctor is not available on this day' });
+    }
+    const offeredSlot = dayAvailability.slots.find(
+      slot => slot.startTime === timeSlot.startTime && slot.endTime === timeSlot.endTime && slot.isAvailable
+    );
+    if (!offeredSlot) {
+      return res.status(400).json({ success: false, error: 'The selected time is not an available doctor slot' });
     }
 
     // Check if the new slot is available (exclude current appointment)
@@ -365,6 +495,12 @@ router.put('/:id/reschedule', protect, async (req, res) => {
       { path: 'doctor', populate: { path: 'user', select: 'name email avatar' } },
       { path: 'patient', select: 'name email avatar' }
     ]);
+
+    const recipientId = isDoctor
+      ? appointment.patient._id
+      : appointment.doctor.user?._id || appointment.doctor.user;
+    const io = req.app.get('io');
+    notifyAppointmentRescheduled(io, appointment, recipientId, req.user.role).catch(console.error);
 
     res.json({ success: true, appointment, message: 'Appointment rescheduled successfully' });
   } catch (error) {

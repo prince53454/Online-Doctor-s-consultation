@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const { randomUUID } = require('crypto');
 const User = require('../models/User');
 const Doctor = require('../models/Doctor');
 const Appointment = require('../models/Appointment');
@@ -6,6 +7,11 @@ const Review = require('../models/Review');
 const Consultation = require('../models/Consultation');
 const Settings = require('../models/Settings');
 require('dotenv').config();
+
+if (process.env.NODE_ENV === 'production') {
+  console.error('Refusing to seed demo data in production.');
+  process.exit(1);
+}
 
 const CITIES = [
   { city: 'Delhi', state: 'Delhi' },
@@ -271,7 +277,7 @@ async function seed() {
         status,
         symptoms: symptoms[Math.floor(Math.random() * symptoms.length)],
         medicalHistory: 'No significant medical history',
-        roomId: require('uuid').v4(),
+        roomId: randomUUID(),
         isAIBooking: Math.random() > 0.8,
         payment: {
           amount: fee,

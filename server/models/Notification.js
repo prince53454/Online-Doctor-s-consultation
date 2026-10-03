@@ -17,6 +17,8 @@ const notificationSchema = new mongoose.Schema({
       'appointment_confirmed',
       'appointment_cancelled',
       'appointment_rescheduled',
+      'appointment_status_updated',
+      'doctor_registered',
       'payment_received',
       'payment_failed',
       'new_message',
@@ -39,6 +41,9 @@ const notificationSchema = new mongoose.Schema({
     patientId: mongoose.Schema.Types.ObjectId,
     roomId: String,
     amount: Number,
+    score: Number,
+    status: String,
+    actorRole: String,
     url: String
   },
   read: { type: Boolean, default: false },

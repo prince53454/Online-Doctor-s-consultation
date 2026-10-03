@@ -36,6 +36,7 @@ const labOrderSchema = new mongoose.Schema({
     default: 'pending'
   },
   paymentMethod: { type: String, default: 'online' },
+  razorpayOrderId: String,
   paymentId: String,
   reportUrl: String,
   reportUploadedAt: Date,

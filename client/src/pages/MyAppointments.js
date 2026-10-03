@@ -51,7 +51,7 @@ export default function MyAppointments() {
 
   const now = new Date();
   const upcoming = appointments.filter(a =>
-    ['pending', 'confirmed'].includes(a.status) && new Date(a.date) >= now
+    ['pending', 'confirmed', 'rescheduled'].includes(a.status) && new Date(a.date) >= now
   );
   const past = appointments.filter(a =>
     ['completed', 'cancelled', 'no-show'].includes(a.status) || new Date(a.date) < now
@@ -144,10 +144,10 @@ export default function MyAppointments() {
                     {apt.status === 'confirmed' && apt.appointmentType === 'chat' && (
                       <Link to={`/chat/${apt.roomId}`} className="btn btn-primary btn-sm">💬 Open Chat</Link>
                     )}
-                    {apt.status === 'pending' && apt.payment?.status === 'pending' && user?.role === 'patient' && (
+                    {['pending', 'rescheduled'].includes(apt.status) && apt.payment?.status === 'pending' && user?.role === 'patient' && (
                       <Link to={`/appointments`} className="btn btn-primary btn-sm">💳 Pay Now</Link>
                     )}
-                    {['pending', 'confirmed'].includes(apt.status) && (
+                    {['pending', 'confirmed', 'rescheduled'].includes(apt.status) && (
                       <button className="btn btn-ghost btn-sm" onClick={() => handleCancel(apt._id)}>Cancel</button>
                     )}
                     {apt.status === 'completed' && !apt.rating?.score && user?.role === 'patient' && (

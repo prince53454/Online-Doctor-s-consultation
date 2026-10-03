@@ -3,26 +3,22 @@ import { io } from 'socket.io-client';
 import api from '../services/api';
 import { useAuth } from './AuthContext';
 import toast from 'react-hot-toast';
+import { SOCKET_URL } from '../config/env';
 
 const NotificationContext = createContext(null);
 
 export function NotificationProvider({ children }) {
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [socket, setSocket] = useState(null);
 
   // Connect to Socket.IO and join user room
   useEffect(() => {
-    if (!user) return;
+    if (!user || !token) return;
 
-    const socketUrl = process.env.REACT_APP_API_URL?.replace('/api', '') || 'http://localhost:5000';
-    const newSocket = io(socketUrl, { withCredentials: true });
+    const newSocket = io(SOCKET_URL, { withCredentials: true, auth: { token } });
     setSocket(newSocket);
-
-    newSocket.on('connect', () => {
-      newSocket.emit('join-user', user.id);
-    });
 
     newSocket.on('notification', (notification) => {
       setNotifications(prev => [notification, ...prev]);
@@ -43,7 +39,7 @@ export function NotificationProvider({ children }) {
     return () => {
       newSocket.disconnect();
     };
-  }, [user]);
+  }, [user, token]);
 
   // Fetch initial notifications
   useEffect(() => {
@@ -129,7 +125,9 @@ function getNotificationIcon(type) {
     doctor_rejected: '🚫',
     reminder_24h: '⏰',
     reminder_1h: '⏰',
-    review_received: '⭐'
+    review_received: '⭐',
+    doctor_registered: '🩺',
+    appointment_status_updated: '📋'
   };
   return icons[type] || '🔔';
 }

@@ -62,6 +62,9 @@ const appointmentSchema = new mongoose.Schema({
       enum: ['pending', 'completed', 'failed', 'refunded'],
       default: 'pending'
     },
+    method: String,
+    razorpayOrderId: String,
+    razorpayPaymentId: String,
     stripePaymentId: String,
     paidAt: Date
   },

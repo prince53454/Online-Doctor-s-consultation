@@ -75,7 +75,11 @@ async function createTestDoctor(overrides = {}) {
       day: 'Monday',
       slots: [
         { startTime: '09:00', endTime: '10:00', isAvailable: true, maxPatients: 1 },
-        { startTime: '10:00', endTime: '11:00', isAvailable: true, maxPatients: 1 }
+        { startTime: '10:00', endTime: '11:00', isAvailable: true, maxPatients: 1 },
+        { startTime: '11:00', endTime: '12:00', isAvailable: true, maxPatients: 1 },
+        { startTime: '14:00', endTime: '15:00', isAvailable: true, maxPatients: 1 },
+        { startTime: '15:00', endTime: '16:00', isAvailable: true, maxPatients: 1 },
+        { startTime: '16:00', endTime: '17:00', isAvailable: true, maxPatients: 1 }
       ]
     }],
     isApproved: true,

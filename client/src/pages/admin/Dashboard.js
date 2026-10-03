@@ -1,22 +1,30 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { useNotifications } from '../../context/NotificationContext';
 import api from '../../services/api';
 import './Admin.css';
 
 export default function AdminDashboard() {
   const { user, logout, loading: authLoading } = useAuth();
+  const { notifications } = useNotifications();
   const navigate = useNavigate();
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (authLoading) return;
+  const fetchDashboard = useCallback(() => {
     api.get('/admin/dashboard')
       .then(res => setStats(res.data))
       .catch(console.error)
       .finally(() => setLoading(false));
-  }, [authLoading]);
+  }, []);
+
+  useEffect(() => {
+    if (!authLoading) fetchDashboard();
+  }, [authLoading, fetchDashboard]);
+  useEffect(() => {
+    if (!authLoading && notifications[0]?._id) fetchDashboard();
+  }, [authLoading, fetchDashboard, notifications[0]?._id]);
 
   if (loading) return <div className="page-loader"><div className="spinner" /></div>;
 
@@ -26,8 +34,8 @@ export default function AdminDashboard() {
     <div className="admin-layout">
       <aside className="admin-sidebar">
         <div className="admin-logo">
-          <img src="https://images.unsplash.com/photo-1631217868264-e5b90bb7e133?w=40&h=40&fit=crop" alt="MediConnect" className="admin-logo-img" />
-          <h2>MediConnect</h2>
+          <span className="admin-logo-mark" aria-hidden="true">+</span>
+          <div><h2>MediConnect</h2><span className="admin-logo-caption">PLATFORM ADMIN</span></div>
         </div>
         <nav className="admin-nav">
           <Link to="/admin" className="admin-nav-item active">📊 Dashboard</Link>
@@ -49,8 +57,12 @@ export default function AdminDashboard() {
       <main className="admin-main">
         <div className="admin-header">
           <img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=1200&h=200&fit=crop" alt="" className="admin-header-bg" />
-          <h1>Dashboard</h1>
-          <p>Welcome back, {user?.name}</p>
+          <div className="admin-header-copy">
+            <span className="admin-eyebrow">PLATFORM OPERATIONS</span>
+            <h1>Operations overview</h1>
+            <p>Good to see you, {user?.name}. Here’s the latest across your care network.</p>
+          </div>
+          <div className="admin-live-status"><span /> Current snapshot</div>
         </div>
 
         {/* Stats Grid */}

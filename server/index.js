@@ -1,9 +1,11 @@
 const http = require('http');
 const mongoose = require('mongoose');
 const { Server } = require('socket.io');
-require('dotenv').config({ override: true });
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '.env') });
 
 const app = require('./app');
+const { configureSockets } = require('./services/socketService');
 const server = http.createServer(app);
 
 // Socket.IO setup
@@ -18,71 +20,54 @@ const io = new Server(server, {
 // Make io accessible to routes
 app.set('io', io);
 
-// Socket.IO events
-io.on('connection', (socket) => {
-  console.log(`Socket connected: ${socket.id}`);
+configureSockets(io);
 
-  socket.on('join-user', (userId) => {
-    socket.join(`user_${userId}`);
-    console.log(`User ${userId} joined notification room`);
-  });
+function validateEnvironment() {
+  const missing = ['MONGODB_URI', 'JWT_SECRET'].filter(key => !process.env[key]?.trim());
+  if (missing.length) {
+    throw new Error(`Missing required environment variables: ${missing.join(', ')}`);
+  }
+  if (process.env.JWT_SECRET.length < 32) {
+    throw new Error('JWT_SECRET must be at least 32 characters long');
+  }
+  if (process.env.NODE_ENV === 'production' && !process.env.CLIENT_URL) {
+    throw new Error('CLIENT_URL must be configured in production');
+  }
+  const proxyHops = process.env.TRUST_PROXY_HOPS;
+  if (proxyHops && (!Number.isInteger(Number(proxyHops)) || Number(proxyHops) < 0)) {
+    throw new Error('TRUST_PROXY_HOPS must be a non-negative integer');
+  }
+}
 
-  socket.on('join-room', (roomId) => {
-    socket.join(roomId);
-    console.log(`User joined room: ${roomId}`);
-  });
-
-  socket.on('video-signal', ({ roomId, signal, userId }) => {
-    io.to(roomId).emit('video-signal', { signal, userId });
-  });
-
-  socket.on('chat-message', ({ roomId, message }) => {
-    io.to(roomId).emit('chat-message', message);
-  });
-
-  socket.on('typing', ({ roomId, userId }) => {
-    socket.to(roomId).emit('typing', { userId });
-  });
-
-  socket.on('stop-typing', ({ roomId, userId }) => {
-    socket.to(roomId).emit('stop-typing', { userId });
-  });
-
-  socket.on('end-call', ({ roomId }) => {
-    io.to(roomId).emit('call-ended');
-  });
-
-  socket.on('rtc-offer', ({ roomId, offer, to }) => {
-    io.to(to).emit('rtc-offer', { offer, from: socket.id });
-  });
-
-  socket.on('rtc-answer', ({ roomId, answer, to }) => {
-    io.to(to).emit('rtc-answer', { answer, from: socket.id });
-  });
-
-  socket.on('rtc-ice-candidate', ({ roomId, candidate, to }) => {
-    io.to(to).emit('rtc-ice-candidate', { candidate, from: socket.id });
-  });
-
-  socket.on('disconnect', () => {
-    console.log(`Socket disconnected: ${socket.id}`);
-  });
-});
-
-// Database connection
-const PORT = process.env.PORT || 5000;
-
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/mediconnect_pro')
-  .then(() => {
-    console.log('✅ MongoDB connected');
-    server.listen(PORT, () => {
-      console.log(`🚀 Server running on port ${PORT}`);
-      console.log(`📡 WebSocket ready`);
+async function startServer() {
+  validateEnvironment();
+  await mongoose.connect(process.env.MONGODB_URI);
+  await new Promise((resolve, reject) => {
+    server.once('error', reject);
+    server.listen(Number(process.env.PORT) || 5000, () => {
+      server.removeListener('error', reject);
+      resolve();
     });
-  })
-  .catch((err) => {
-    console.error('❌ MongoDB connection error:', err.message);
-    process.exit(1);
   });
+  console.log(`Server listening on port ${server.address().port}`);
+  return server;
+}
 
-module.exports = { app, server, io };
+async function stopServer(signal) {
+  console.log(`${signal} received; shutting down`);
+  await new Promise(resolve => io.close(resolve));
+  await mongoose.disconnect();
+  process.exitCode = 0;
+}
+
+if (require.main === module) {
+  startServer().then(() => {
+    process.once('SIGTERM', () => stopServer('SIGTERM'));
+    process.once('SIGINT', () => stopServer('SIGINT'));
+  }).catch(error => {
+    console.error('Server startup failed:', error.message);
+    process.exitCode = 1;
+  });
+}
+
+module.exports = { app, server, io, startServer, stopServer, validateEnvironment };

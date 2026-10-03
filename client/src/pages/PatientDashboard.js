@@ -1,38 +1,34 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useNotifications } from '../context/NotificationContext';
 import api from '../services/api';
 import toast from 'react-hot-toast';
 import './PatientDashboard.css';
 
 export default function PatientDashboard() {
   const { user, loading: authLoading } = useAuth();
+  const { notifications } = useNotifications();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({ total: 0, upcoming: 0, completed: 0, cancelled: 0 });
   const [appointments, setAppointments] = useState([]);
-  const [notifications, setNotifications] = useState([]);
   const [prescriptions, setPrescriptions] = useState([]);
   const [healthMetrics, setHealthMetrics] = useState([]);
 
   const fetchData = useCallback(async () => {
     try {
-      const [aptRes, notifRes] = await Promise.all([
-        api.get('/appointments?limit=50'),
-        api.get('/notifications?limit=5').catch(() => ({ data: { notifications: [] } }))
-      ]);
+      const aptRes = await api.get('/appointments?limit=50');
 
       const apts = aptRes.data.appointments || [];
       const now = new Date();
 
-      const upcoming = apts.filter(a => ['pending', 'confirmed'].includes(a.status) && new Date(a.date) >= now);
+      const upcoming = apts.filter(a => ['pending', 'confirmed', 'rescheduled'].includes(a.status) && new Date(a.date) >= now);
       const completed = apts.filter(a => a.status === 'completed');
       const cancelled = apts.filter(a => a.status === 'cancelled');
 
       setStats({ total: apts.length, upcoming: upcoming.length, completed: completed.length, cancelled: cancelled.length });
       setAppointments(apts.slice(0, 10));
-      setNotifications(notifRes.data.notifications || []);
-
       // Fetch medical records for prescriptions
       try {
         const recRes = await api.get('/medical-records');
@@ -47,6 +43,9 @@ export default function PatientDashboard() {
   }, []);
 
   useEffect(() => { if (!authLoading) fetchData(); }, [authLoading, fetchData]);
+  useEffect(() => {
+    if (!authLoading && notifications[0]?._id) fetchData();
+  }, [authLoading, fetchData, notifications[0]?._id]);
 
   const handleCancel = async (id) => {
     if (!window.confirm('Cancel this appointment?')) return;
@@ -59,8 +58,8 @@ export default function PatientDashboard() {
 
   const today = new Date(); today.setHours(0, 0, 0, 0);
   const tomorrow = new Date(today); tomorrow.setDate(tomorrow.getDate() + 1);
-  const todayAppts = appointments.filter(a => { const d = new Date(a.date); return d >= today && d < tomorrow && ['pending', 'confirmed'].includes(a.status); });
-  const upcomingAppts = appointments.filter(a => ['pending', 'confirmed'].includes(a.status) && new Date(a.date) >= tomorrow).slice(0, 5);
+  const todayAppts = appointments.filter(a => { const d = new Date(a.date); return d >= today && d < tomorrow && ['pending', 'confirmed', 'rescheduled'].includes(a.status); });
+  const upcomingAppts = appointments.filter(a => ['pending', 'confirmed', 'rescheduled'].includes(a.status) && new Date(a.date) >= tomorrow).slice(0, 5);
 
   if (loading) return <div className="page-loader"><div className="spinner" /></div>;
 
@@ -72,13 +71,14 @@ export default function PatientDashboard() {
           <div className="pd-hero-left">
             <img src={user?.avatar || `https://ui-avatars.com/api/?name=${user?.name}&background=4F46E5&color=fff&bold=true`} alt="" className="pd-hero-avatar" />
             <div>
+              <span className="pd-eyebrow">YOUR PERSONAL HEALTH SPACE</span>
               <h1>Welcome back, {user?.name?.split(' ')[0]} 👋</h1>
-              <p>Here's your health overview for today</p>
+              <p>Your care, appointments, and health records in one place.</p>
             </div>
           </div>
           <div className="pd-hero-actions">
-            <Link to="/ai-checker" className="btn btn-primary">🤖 AI Symptom Check</Link>
-            <Link to="/doctors" className="btn btn-secondary">👨‍⚕️ Find Doctor</Link>
+            <Link to="/ai-checker" className="btn btn-primary">✦ AI symptom check</Link>
+            <Link to="/doctors" className="btn btn-secondary">Find a doctor <span aria-hidden="true">↗</span></Link>
           </div>
         </div>
 
@@ -120,8 +120,11 @@ export default function PatientDashboard() {
             {/* Today's Appointments */}
             <div className="pd-card">
               <div className="pd-card-header">
-                <h3>📋 Today's Appointments</h3>
-                <Link to="/appointments" className="pd-link">View All →</Link>
+                <div>
+                  <span className="pd-section-kicker">YOUR DAY</span>
+                  <h3>Today’s appointments</h3>
+                </div>
+                <Link to="/appointments" className="pd-link">View all <span aria-hidden="true">↗</span></Link>
               </div>
               <div className="pd-card-body">
                 {todayAppts.length === 0 ? (
@@ -158,8 +161,11 @@ export default function PatientDashboard() {
             {upcomingAppts.length > 0 && (
               <div className="pd-card">
                 <div className="pd-card-header">
-                  <h3>📅 Upcoming Appointments</h3>
-                  <Link to="/appointments" className="pd-link">View All →</Link>
+                  <div>
+                    <span className="pd-section-kicker">ON YOUR CALENDAR</span>
+                    <h3>Coming up</h3>
+                  </div>
+                  <Link to="/appointments" className="pd-link">View all <span aria-hidden="true">↗</span></Link>
                 </div>
                 <div className="pd-card-body">
                   {upcomingAppts.map(apt => (

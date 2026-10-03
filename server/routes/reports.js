@@ -44,7 +44,10 @@ router.post('/', protect, uploadMiddleware.single('file'), async (req, res) => {
     res.status(201).json({ success: true, report });
   } catch (error) {
     console.error('Report upload error:', error);
-    res.status(500).json({ success: false, error: 'Upload failed' });
+    res.status(error.statusCode || 500).json({
+      success: false,
+      error: error.statusCode === 503 ? error.message : 'Upload failed'
+    });
   }
 });
 

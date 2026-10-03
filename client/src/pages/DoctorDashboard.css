@@ -191,3 +191,125 @@
   .dash-hero h1 { font-size: 22px; }
   .dash-tabs { overflow-x: auto; flex-wrap: nowrap; }
 }
+
+.dash-page {
+  --dash-ink: #172622;
+  --dash-muted: #788680;
+  --dash-line: #e7ece8;
+  padding-bottom: 72px;
+  background:
+    radial-gradient(ellipse at 82% 0%, rgba(216, 236, 221, 0.34), transparent 32%),
+    #f5f7f5;
+}
+.dash-hero {
+  min-height: 226px;
+  padding: 34px 0 55px;
+  background:
+    radial-gradient(ellipse at 82% 5%, rgba(107, 173, 126, 0.25), transparent 32%),
+    linear-gradient(118deg, #112722 0%, #183a30 62%, #24503e 100%);
+}
+.dash-hero::before {
+  left: auto;
+  right: 22%;
+  bottom: -135px;
+  width: 280px;
+  height: 280px;
+  border: 1px solid rgba(237, 250, 239, 0.12);
+  box-shadow: 0 0 0 34px rgba(237, 250, 239, 0.035), 0 0 0 68px rgba(237, 250, 239, 0.025);
+}
+.dash-hero::after { right: -70px; top: -175px; width: 360px; height: 360px; background: rgba(121, 184, 138, 0.08); }
+.dash-hero .container { position: relative; z-index: 1; max-width: 1360px; }
+.dash-eyebrow {
+  display: block;
+  margin-bottom: 8px;
+  color: #a5d7b0;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+}
+.dash-hero h1 { margin: 0 0 6px; font-size: clamp(24px, 3vw, 34px); font-weight: 650; letter-spacing: -0.045em; }
+.dash-hero p { color: rgba(236, 247, 239, 0.7); font-size: 13px; }
+.dash-hero-right { gap: 10px; }
+.dash-hero .badge-online { padding: 9px 13px; border: 1px solid rgba(255, 255, 255, 0.12); background: rgba(255, 255, 255, 0.07); color: #eff9f0; font-size: 11px; }
+.dash-hero .badge-online .dot { background: #9be2a9; box-shadow: 0 0 0 4px rgba(155, 226, 169, 0.12); animation: none; }
+.dash-hero .btn-primary { min-height: 42px; border: 1px solid rgba(224, 246, 228, 0.2); border-radius: 12px; background: #b9e3c3; color: #15382c; box-shadow: none; font-size: 12px; }
+.dash-hero .btn-primary:hover:not(:disabled) { background: #c9efd2; box-shadow: 0 8px 20px rgba(7, 28, 20, 0.2); }
+.dash-page > .container { max-width: 1360px; }
+.dash-stats { gap: 13px; margin-top: -31px; margin-bottom: 22px; }
+.dash-stat-card { min-height: 108px; padding: 18px; border: 1px solid var(--dash-line); border-radius: 18px; box-shadow: 0 8px 22px rgba(21, 44, 34, 0.07); }
+.dash-stat-card:hover { transform: translateY(-3px); box-shadow: 0 14px 30px rgba(21, 44, 34, 0.12); }
+.dash-stat-icon { width: 43px; height: 43px; border-radius: 14px; font-size: 19px; }
+.dash-stat-icon.green { background: #e8f4eb; }
+.dash-stat-icon.blue { background: #edf2f5; }
+.dash-stat-icon.yellow { background: #f8f2e5; }
+.dash-stat-icon.red { background: #f7eee9; }
+.dash-stat-info h3 { color: var(--dash-ink); font-size: 24px; letter-spacing: -0.04em; }
+.dash-stat-info p { color: var(--dash-muted); font-size: 10px; font-weight: 700; letter-spacing: 0.02em; }
+.dash-tabs {
+  position: sticky;
+  top: 12px;
+  z-index: 20;
+  gap: 5px;
+  padding: 5px;
+  border: 1px solid var(--dash-line);
+  border-radius: 15px;
+  box-shadow: 0 8px 22px rgba(21, 44, 34, 0.055);
+}
+.dash-tab { padding: 10px 15px; border-radius: 11px; color: #738079; font-size: 11px; }
+.dash-tab:hover { background: #f1f6f2; color: #315c43; }
+.dash-tab.active { background: #245b43; box-shadow: 0 4px 10px rgba(36, 91, 67, 0.18); }
+.dash-layout { grid-template-columns: minmax(0, 1fr) 320px; gap: 18px; }
+.dash-main, .dash-sidebar { gap: 17px; }
+.dash-card { border: 1px solid var(--dash-line); border-radius: 19px; box-shadow: 0 5px 20px rgba(24, 44, 35, 0.035); transition: box-shadow 180ms ease; }
+.dash-card:hover { box-shadow: 0 12px 30px rgba(24, 44, 35, 0.07); }
+.dash-card-header { min-height: 66px; padding: 15px 20px; border-bottom-color: #edf1ed; }
+.dash-card-header h3 { color: var(--dash-ink); font-size: 14px; letter-spacing: -0.02em; }
+.dash-card-body { padding: 14px 20px; }
+.apt-item, .patient-item, .msg-item { border-bottom-color: #edf1ed; }
+.apt-item { gap: 13px; padding: 14px 0; }
+.apt-avatar, .patient-avatar { width: 43px; height: 43px; border: 2px solid #edf3ee; border-radius: 14px; }
+.apt-info h4, .patient-info h4, .msg-content h4 { color: var(--dash-ink); font-size: 12px; font-weight: 750; }
+.apt-info p, .patient-info p, .msg-content p { color: var(--dash-muted); font-size: 11px; }
+.apt-time .time { color: #315f45; font-size: 12px; }
+.apt-time .date, .patient-meta, .msg-time { color: #89958f; font-size: 10px; }
+.apt-item:hover, .patient-item:hover, .msg-item:hover { background: #f6f9f6; }
+.patient-item, .msg-item { padding: 13px 0; }
+.schedule-day { border: 1px solid #edf1ed; border-radius: 13px; background: #f8faf8; }
+.schedule-day h4 { color: #40574a; font-size: 11px; }
+.slot-chip { border-color: #d9eadc; border-radius: 99px; background: #ebf5ed; color: #3a7950; font-size: 10px; }
+.quick-action-btn { border-color: #e8eeea; border-radius: 14px; background: #fbfcfb; color: #52645a; }
+.quick-action-btn:hover { border-color: #b8d5be; background: #f0f7f1; color: #2a6543; }
+.dash-empty { padding: 40px 20px; }
+.dash-empty-icon { display: inline-grid; width: 58px; height: 58px; place-items: center; margin-bottom: 14px; border-radius: 19px; background: #eff5f0; font-size: 25px; }
+.dash-empty h3 { color: var(--dash-ink); font-size: 14px; }
+.dash-empty p { color: var(--dash-muted); font-size: 11px; }
+.modal { border: 1px solid #e4ebe5; border-radius: 20px; }
+.modal-header, .modal-footer { border-color: #edf1ed; }
+.modal-header h2 { color: var(--dash-ink); }
+
+@media (max-width: 1024px) {
+  .dash-layout { grid-template-columns: 1fr; }
+}
+@media (max-width: 768px) {
+  .dash-hero { padding: 26px 0 43px; }
+  .dash-hero .container { align-items: flex-start; gap: 18px; }
+  .dash-hero-right { flex-wrap: wrap; justify-content: flex-end; }
+  .dash-stats { margin: -20px 16px 17px; }
+  .dash-layout { padding: 0 16px; }
+  .dash-tabs { top: 6px; }
+}
+@media (max-width: 560px) {
+  .dash-hero .container { flex-direction: column; }
+  .dash-hero-right { justify-content: flex-start; }
+  .dash-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
+  .dash-stat-card { min-height: 90px; gap: 10px; padding: 13px; }
+  .dash-stat-icon { width: 36px; height: 36px; font-size: 16px; }
+  .dash-stat-info h3 { font-size: 20px; }
+  .dash-tab { padding: 9px 12px; }
+  .dash-layout { padding: 0 11px; }
+  .dash-card { border-radius: 16px; }
+  .dash-card-header, .dash-card-body { padding-right: 14px; padding-left: 14px; }
+  .apt-item { flex-wrap: wrap; }
+  .apt-time { margin-left: auto; }
+  .apt-actions { width: 100%; justify-content: flex-end; }
+}

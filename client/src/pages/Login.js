@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
 import './Auth.css';
@@ -10,6 +10,7 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -18,15 +19,23 @@ export default function Login() {
       const userData = await login(formData.email, formData.password);
       toast.success(`Welcome back, ${userData.name}!`);
 
-      if (userData.role === 'admin') {
-        toast.error('Admin access is restricted to backend API');
-        navigate('/login');
+      const requestedPath = location.state?.from?.pathname;
+      const allowedRequestedPath = requestedPath && (
+        (userData.role === 'admin' && requestedPath.startsWith('/admin')) ||
+        (userData.role === 'doctor' && requestedPath.startsWith('/doctor')) ||
+        (userData.role === 'patient' && !requestedPath.startsWith('/admin') && !requestedPath.startsWith('/doctor'))
+      );
+
+      if (allowedRequestedPath) {
+        navigate(requestedPath, { replace: true });
+      } else if (userData.role === 'admin') {
+        navigate('/admin');
       } else if (userData.role === 'doctor' && userData.isApproved === false) {
         navigate('/doctor/pending');
       } else if (userData.role === 'doctor') {
         navigate('/doctor/dashboard');
       } else {
-        navigate('/');
+        navigate('/dashboard');
       }
     } catch (error) {
       toast.error(error.response?.data?.error || 'Login failed');

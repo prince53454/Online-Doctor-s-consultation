@@ -3,13 +3,18 @@ services:
     name: mediconnect-pro
     runtime: node
     plan: free
-    buildCommand: cd server && npm install && cd ../client && npm install && npm run build
-    startCommand: cd server && node index.js
+    buildCommand: cd server && npm ci && cd ../client && npm ci && npm run build
+    startCommand: cd server && npm start
+    healthCheckPath: /api/health
     envVars:
       - key: MONGODB_URI
-        value: mongodb+srv://thomasshelby09766_db_user:GRUfeMpYV50XIFr9@cluster0.pbmt6oy.mongodb.net/mediconnect_pro?appName=Cluster0
+        sync: false
       - key: JWT_SECRET
-        value: mediconnect_super_secret_key_2024_production
+        sync: false
+      - key: CLIENT_URL
+        sync: false
+      - key: TRUST_PROXY_HOPS
+        value: 1
       - key: NODE_ENV
         value: production
       - key: PORT

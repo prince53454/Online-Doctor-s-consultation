@@ -38,6 +38,7 @@ async function confirmPayment(paymentIntentId) {
     status: paymentIntent.status,
     amount: paymentIntent.amount / 100,
     currency: paymentIntent.currency,
+    metadata: paymentIntent.metadata,
     receiptUrl: paymentIntent.charges?.data?.[0]?.receipt_url || null
   };
 }

@@ -1,6 +1,12 @@
 const mongoose = require('mongoose');
 const path = require('path');
-require('dotenv').config({ path: path.join(__dirname, '../.env'), override: true });
+require('dotenv').config({ path: path.join(__dirname, '../.env') });
+
+if (process.env.NODE_ENV === 'production') {
+  console.error('Refusing to seed demo labs in production.');
+  process.exit(1);
+}
+
 const Lab = require('../models/Lab');
 
 const labs = [

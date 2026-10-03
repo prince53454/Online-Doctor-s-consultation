@@ -1,12 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { useNotifications } from '../../context/NotificationContext';
 import api from '../../services/api';
 import toast from 'react-hot-toast';
 import './Admin.css';
 
 export default function AdminAppointments() {
   const { user, logout, loading: authLoading } = useAuth();
+  const { notifications } = useNotifications();
   const navigate = useNavigate();
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -14,7 +16,7 @@ export default function AdminAppointments() {
   const [page, setPage] = useState(1);
   const [pagination, setPagination] = useState({});
 
-  const fetchAppointments = async () => {
+  const fetchAppointments = useCallback(async () => {
     try {
       const params = new URLSearchParams({ page, limit: 20 });
       if (filter) params.set('status', filter);
@@ -27,9 +29,12 @@ export default function AdminAppointments() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filter, page]);
 
-  useEffect(() => { if (!authLoading) fetchAppointments(); }, [authLoading, filter, page]);
+  useEffect(() => { if (!authLoading) fetchAppointments(); }, [authLoading, fetchAppointments]);
+  useEffect(() => {
+    if (!authLoading && notifications[0]?._id) fetchAppointments();
+  }, [authLoading, fetchAppointments, notifications[0]?._id]);
 
   const handleStatusChange = async (id, status) => {
     try {
@@ -62,7 +67,7 @@ export default function AdminAppointments() {
         <div className="admin-header"><h1>Manage Appointments</h1></div>
 
         <div className="admin-filters">
-          {['', 'pending', 'confirmed', 'completed', 'cancelled'].map(f => (
+          {['', 'pending', 'confirmed', 'rescheduled', 'completed', 'cancelled'].map(f => (
             <button key={f} className={`filter-chip ${filter === f ? 'active' : ''}`} onClick={() => { setFilter(f); setPage(1); }}>
               {f || 'All'}
             </button>
@@ -104,10 +109,10 @@ export default function AdminAppointments() {
                       </td>
                       <td>
                         <div className="admin-actions">
-                          {apt.status === 'pending' && (
+                          {['pending', 'rescheduled'].includes(apt.status) && (
                             <button className="btn btn-success btn-sm" onClick={() => handleStatusChange(apt._id, 'confirmed')}>Confirm</button>
                           )}
-                          {['pending', 'confirmed'].includes(apt.status) && (
+                          {['pending', 'confirmed', 'rescheduled'].includes(apt.status) && (
                             <button className="btn btn-danger btn-sm" onClick={() => handleStatusChange(apt._id, 'cancelled')}>Cancel</button>
                           )}
                         </div>

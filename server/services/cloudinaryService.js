@@ -3,7 +3,12 @@ const multer = require('multer');
 const path = require('path');
 
 // Configure Cloudinary
-const isConfigured = process.env.CLOUDINARY_CLOUD_NAME && !process.env.CLOUDINARY_CLOUD_NAME.includes('your_');
+const cloudinaryCredentials = [
+  process.env.CLOUDINARY_CLOUD_NAME,
+  process.env.CLOUDINARY_API_KEY,
+  process.env.CLOUDINARY_API_SECRET
+];
+const isConfigured = cloudinaryCredentials.every(value => value && !value.includes('your_'));
 
 if (isConfigured) {
   cloudinary.config({
@@ -33,8 +38,17 @@ const upload = multer({
   }
 });
 
+function ensureProductionStorage() {
+  if (process.env.NODE_ENV === 'production' && !isConfigured) {
+    const error = new Error('File storage is not configured');
+    error.statusCode = 503;
+    throw error;
+  }
+}
+
 // Upload buffer to Cloudinary
 async function uploadToCloudinary(buffer, options = {}) {
+  ensureProductionStorage();
   if (!isConfigured) {
     // Fallback: return a placeholder URL for development
     return {
@@ -70,6 +84,7 @@ async function uploadToCloudinary(buffer, options = {}) {
 
 // Upload from URL
 async function uploadFromUrl(url, options = {}) {
+  ensureProductionStorage();
   if (!isConfigured) {
     return { url, publicId: `dev_${Date.now()}` };
   }
@@ -89,12 +104,14 @@ async function uploadFromUrl(url, options = {}) {
 
 // Delete a file
 async function deleteFile(publicId) {
+  ensureProductionStorage();
   if (!isConfigured) return { result: 'ok' };
   return await cloudinary.uploader.destroy(publicId);
 }
 
 // Generate upload widget signature (for frontend direct upload)
 function generateSignature(folder = 'mediconnect') {
+  ensureProductionStorage();
   if (!isConfigured) return null;
 
   const timestamp = Math.round(new Date().getTime() / 1000);

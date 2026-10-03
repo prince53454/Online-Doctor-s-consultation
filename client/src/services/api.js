@@ -1,8 +1,9 @@
 import axios from 'axios';
 import { getMockUser, getMockDoctors, getMockAppointments, getMockNotifications, isBackendAvailable } from './mockData';
+import { API_URL } from '../config/env';
 
 const api = axios.create({
-  baseURL: process.env.REACT_APP_API_URL || 'http://localhost:5000/api',
+  baseURL: API_URL,
   headers: {
     'Content-Type': 'application/json'
   }

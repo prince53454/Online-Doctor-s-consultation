@@ -4,6 +4,7 @@ const Doctor = require('../models/Doctor');
 const User = require('../models/User');
 const Review = require('../models/Review');
 const { protect, authorize, optionalAuth } = require('../middleware/auth');
+const { notifyAdminsDoctorRegistered } = require('../services/notificationService');
 
 // @route   GET /api/doctors
 // @desc    Search doctors with filters
@@ -157,7 +158,7 @@ router.get('/featured', async (req, res) => {
 // @access  Public
 router.get('/:id', async (req, res) => {
   try {
-    const doctor = await Doctor.findById(req.params.id)
+    const doctor = await Doctor.findOne({ _id: req.params.id, isApproved: true })
       .populate('user', 'name email avatar phone');
 
     if (!doctor) {
@@ -183,7 +184,7 @@ router.get('/:id', async (req, res) => {
 router.get('/:id/availability', async (req, res) => {
   try {
     const { date, startDate, endDate } = req.query;
-    const doctor = await Doctor.findById(req.params.id);
+    const doctor = await Doctor.findOne({ _id: req.params.id, isApproved: true });
 
     if (!doctor) {
       return res.status(404).json({ success: false, error: 'Doctor not found' });
@@ -195,7 +196,7 @@ router.get('/:id/availability', async (req, res) => {
     const blockedSlots = doctor.blockedSlots || [];
     if (date) {
       const targetDate = new Date(date);
-      const dayName = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][targetDate.getDay()];
+      const dayName = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][targetDate.getUTCDay()];
 
       availability = availability.filter(a => a.day === dayName);
 
@@ -222,8 +223,18 @@ router.get('/:id/availability', async (req, res) => {
 // @access  Private (Doctor)
 router.put('/profile', protect, authorize('doctor'), async (req, res) => {
   try {
-    const updates = req.body;
+    const allowedFields = [
+      'specialization', 'subSpecialization', 'experience', 'licenseNumber',
+      'qualification', 'consultationFee', 'location', 'clinicName', 'clinicAddress',
+      'availability', 'blockedSlots', 'languages', 'about', 'awards',
+      'publications', 'profileImages', 'responseTime', 'acceptOnlineConsultation',
+      'languagesKnown', 'tags', 'verificationDocuments'
+    ];
+    const updates = Object.fromEntries(
+      Object.entries(req.body).filter(([key]) => allowedFields.includes(key))
+    );
     let doctor = await Doctor.findOne({ user: req.user.id });
+    const isNewProfile = !doctor;
 
     if (doctor) {
       // Update existing
@@ -244,6 +255,10 @@ router.put('/profile', protect, authorize('doctor'), async (req, res) => {
     }
 
     await doctor.populate('user', 'name email avatar');
+
+    if (isNewProfile) {
+      notifyAdminsDoctorRegistered(req.app.get('io'), doctor).catch(console.error);
+    }
 
     res.json({ success: true, doctor });
   } catch (error) {

@@ -1,6 +1,11 @@
 const mongoose = require('mongoose');
 const path = require('path');
-require('dotenv').config({ path: path.join(__dirname, '../.env'), override: true });
+require('dotenv').config({ path: path.join(__dirname, '../.env') });
+
+if (process.env.NODE_ENV === 'production') {
+  console.error('Refusing to seed demo images in production.');
+  process.exit(1);
+}
 
 const User = require('../models/User');
 const Doctor = require('../models/Doctor');

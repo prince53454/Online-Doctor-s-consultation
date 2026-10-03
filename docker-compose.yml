@@ -1,65 +1,54 @@
-version: '3.8'
-
 services:
-  # ── MongoDB ────────────────────────────
   mongodb:
     image: mongo:7
-    container_name: mediconnect-mongo
     restart: unless-stopped
     ports:
-      - "27017:27017"
+      - "127.0.0.1:27017:27017"
     volumes:
       - mongo_data:/data/db
     environment:
       MONGO_INITDB_DATABASE: mediconnect_pro
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME:?Set MONGO_INITDB_ROOT_USERNAME in .env}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD:?Set MONGO_INITDB_ROOT_PASSWORD in .env}
+    healthcheck:
+      test: ["CMD-SHELL", "mongosh --quiet -u \"$$MONGO_INITDB_ROOT_USERNAME\" -p \"$$MONGO_INITDB_ROOT_PASSWORD\" --authenticationDatabase admin --eval \"db.adminCommand('ping').ok\""]
+      interval: 10s
+      timeout: 5s
+      retries: 10
 
-  # ── MediConnect App ─────────────────────
   app:
     build:
       context: .
       dockerfile: server/Dockerfile
-    container_name: mediconnect-app
     restart: unless-stopped
     ports:
-      - "5000:5000"
+      - "127.0.0.1:5000:5000"
     depends_on:
-      - mongodb
+      mongodb:
+        condition: service_healthy
     environment:
       NODE_ENV: production
       PORT: 5000
-      MONGODB_URI: mongodb://mongodb:27017/mediconnect_pro
-      JWT_SECRET: change_this_to_a_long_random_string_in_production
-      JWT_EXPIRE: 30d
-      CLIENT_URL: http://localhost:5000
-      # Add your keys below:
-      # RAZORPAY_KEY_ID: rzp_test_xxxxx
-      # RAZORPAY_KEY_SECRET: xxxxx
-      # SMTP_HOST: smtp.gmail.com
-      # SMTP_PORT: 587
-      # SMTP_USER: your_email@gmail.com
-      # SMTP_PASS: your_app_password
-
-  # ── Seed (run once) ────────────────────
-  seed:
-    build:
-      context: .
-      dockerfile: server/Dockerfile
-    container_name: mediconnect-seed
-    depends_on:
-      - mongodb
-    environment:
-      MONGODB_URI: mongodb://mongodb:27017/mediconnect_pro
-      JWT_SECRET: change_this_to_a_long_random_string_in_production
-    command: >
-      sh -c "
-        echo '⏳ Waiting for MongoDB...' &&
-        sleep 5 &&
-        echo '🌱 Seeding database...' &&
-        node seeds/seed.js &&
-        echo '✅ Seeding complete!'
-      "
-    # Exit after seeding
-    restart: "no"
+      MONGODB_URI: ${MONGODB_URI:?Set MONGODB_URI in .env}
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env}
+      JWT_EXPIRE: ${JWT_EXPIRE:-30d}
+      CLIENT_URL: ${CLIENT_URL:-http://localhost:5000}
+      TRUST_PROXY_HOPS: ${TRUST_PROXY_HOPS:-0}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      EMAIL_FROM: ${EMAIL_FROM:-}
+      RAZORPAY_KEY_ID: ${RAZORPAY_KEY_ID:-}
+      RAZORPAY_KEY_SECRET: ${RAZORPAY_KEY_SECRET:-}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
+      STRIPE_PUBLISHABLE_KEY: ${STRIPE_PUBLISHABLE_KEY:-}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
+      CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME:-}
+      CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY:-}
+      CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET:-}
+      DAILY_API_KEY: ${DAILY_API_KEY:-}
+      DAILY_API_SECRET: ${DAILY_API_SECRET:-}
 
 volumes:
   mongo_data:

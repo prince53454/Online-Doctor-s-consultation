@@ -1,5 +1,6 @@
 const request = require('supertest');
 const mongoose = require('mongoose');
+const crypto = require('crypto');
 const { generateToken, createTestUser } = require('./setup');
 
 // We test against the Express app directly (no server.listen needed)
@@ -21,7 +22,7 @@ describe('Auth Routes', () => {
   // ─── REGISTER ─────────────────────────
   describe('POST /api/auth/register', () => {
     it('should register a new patient', async () => {
-      testEmail = `patient_${Date.now()}@test.com`;
+      testEmail = `patient_${Date.now()}@TEST.COM`;
       const res = await request(app)
         .post('/api/auth/register')
         .send({
@@ -36,9 +37,35 @@ describe('Auth Routes', () => {
       expect(res.body.success).toBe(true);
       expect(res.body.token).toBeDefined();
       expect(res.body.user.name).toBe('Test Patient');
-      expect(res.body.user.email).toBe(testEmail);
+      expect(res.body.user.email).toBe(testEmail.toLowerCase());
       expect(res.body.user.role).toBe('patient');
       expect(res.body.user.password).toBeUndefined(); // Password not leaked
+    });
+
+    it.each(['not-an-email', 'missing-at.example.com', 'person@invalid'])(
+      'should reject malformed email address %s',
+      async (email) => {
+        const res = await request(app)
+          .post('/api/auth/register')
+          .send({ name: 'Invalid Email', email, password: 'password123' });
+
+        expect(res.status).toBe(400);
+        expect(res.body.success).toBe(false);
+        expect(res.body.errors.some(error => error.path === 'email')).toBe(true);
+      }
+    );
+
+    it('should accept email aliases and modern long top-level domains', async () => {
+      const res = await request(app)
+        .post('/api/auth/register')
+        .send({
+          name: 'Valid Email',
+          email: `person+care_${Date.now()}@example.technology`,
+          password: 'password123'
+        });
+
+      expect(res.status).toBe(201);
+      expect(res.body.user.email).toMatch(/person\+care_.*@example\.technology$/);
     });
 
     it('should reject duplicate email', async () => {
@@ -97,12 +124,21 @@ describe('Auth Routes', () => {
     it('should login with valid credentials', async () => {
       const res = await request(app)
         .post('/api/auth/login')
-        .send({ email: testEmail, password: 'password123' });
+        .send({ email: testEmail.toUpperCase(), password: 'password123' });
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
       expect(res.body.token).toBeDefined();
-      expect(res.body.user.email).toBe(testEmail);
+      expect(res.body.user.email).toBe(testEmail.toLowerCase());
+    });
+
+    it('should reject malformed email addresses before querying users', async () => {
+      const res = await request(app)
+        .post('/api/auth/login')
+        .send({ email: 'not-an-email', password: 'password123' });
+
+      expect(res.status).toBe(400);
+      expect(res.body.errors.some(error => error.path === 'email')).toBe(true);
     });
 
     it('should reject wrong password', async () => {
@@ -144,6 +180,23 @@ describe('Auth Routes', () => {
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
       expect(res.body.user.email).toBe(user.email);
+    });
+
+    describe('PUT /api/auth/profile', () => {
+      it('should update allowed profile fields without changing role or email', async () => {
+        const user = await createTestUser({ email: `profile_${Date.now()}@test.com` });
+        const token = generateToken(user._id, user.role);
+
+        const res = await request(app)
+          .put('/api/auth/profile')
+          .set('Authorization', `Bearer ${token}`)
+          .send({ name: 'Updated Name', role: 'admin', email: 'attacker@example.com' });
+
+        expect(res.status).toBe(200);
+        expect(res.body.user.name).toBe('Updated Name');
+        expect(res.body.user.role).toBe('patient');
+        expect(res.body.user.email).toBe(user.email);
+      });
     });
 
     it('should reject request without token', async () => {
@@ -225,6 +278,60 @@ describe('Auth Routes', () => {
         .send({ email: user.email });
 
       expect(res.status).toBe(200);
+      const updatedUser = await mongoose.model('User').findById(user._id).select('+resetPasswordToken');
+      expect(updatedUser.resetPasswordToken).toMatch(/^[a-f0-9]{64}$/);
+      expect(updatedUser.resetPasswordExpire.getTime()).toBeGreaterThan(Date.now());
+    });
+
+    it('should reject malformed email addresses', async () => {
+      const res = await request(app)
+        .post('/api/auth/forgot-password')
+        .send({ email: 'not-an-email' });
+
+      expect(res.status).toBe(400);
+      expect(res.body.errors.some(error => error.path === 'email')).toBe(true);
+    });
+  });
+
+  describe('PUT /api/auth/reset-password', () => {
+    it('should reset the password once with an unexpired token', async () => {
+      const user = await createTestUser({ email: `reset_${Date.now()}@test.com` });
+      const rawToken = `reset-token-${Date.now()}`;
+      user.resetPasswordToken = crypto.createHash('sha256').update(rawToken).digest('hex');
+      user.resetPasswordExpire = new Date(Date.now() + 15 * 60 * 1000);
+      await user.save();
+
+      const res = await request(app)
+        .put('/api/auth/reset-password')
+        .send({ token: rawToken, password: 'new-password-123' });
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      const loginRes = await request(app)
+        .post('/api/auth/login')
+        .send({ email: user.email, password: 'new-password-123' });
+      expect(loginRes.status).toBe(200);
+
+      const repeatedRes = await request(app)
+        .put('/api/auth/reset-password')
+        .send({ token: rawToken, password: 'another-password' });
+      expect(repeatedRes.status).toBe(400);
+    });
+
+    it('should reject expired and malformed reset requests', async () => {
+      const missingFields = await request(app).put('/api/auth/reset-password').send({});
+      expect(missingFields.status).toBe(400);
+
+      const user = await createTestUser({ email: `expired_${Date.now()}@test.com` });
+      const rawToken = `expired-token-${Date.now()}`;
+      user.resetPasswordToken = crypto.createHash('sha256').update(rawToken).digest('hex');
+      user.resetPasswordExpire = new Date(Date.now() - 1000);
+      await user.save();
+
+      const expired = await request(app)
+        .put('/api/auth/reset-password')
+        .send({ token: rawToken, password: 'new-password-123' });
+      expect(expired.status).toBe(400);
     });
   });
 });

@@ -3,7 +3,15 @@ const https = require('https');
 const DAILY_API_KEY = process.env.DAILY_API_KEY;
 const DAILY_DOMAIN = process.env.DAILY_DOMAIN;
 
-const isConfigured = DAILY_API_KEY && !DAILY_API_KEY.includes('your_');
+const isConfigured = Boolean(DAILY_API_KEY && !DAILY_API_KEY.includes('your_'));
+
+function ensureProductionVideoProvider() {
+  if (process.env.NODE_ENV === 'production' && !isConfigured) {
+    const error = new Error('Video service is not configured');
+    error.statusCode = 503;
+    throw error;
+  }
+}
 
 // Generic Daily.co API request
 function dailyApiRequest(method, path, body = null) {
@@ -48,6 +56,7 @@ function dailyApiRequest(method, path, body = null) {
 
 // Create a video room for a consultation
 async function createRoom({ roomName, consultationId }) {
+  ensureProductionVideoProvider();
   if (!isConfigured) {
     // Development fallback — returns a fake room
     return {
@@ -83,6 +92,7 @@ async function createRoom({ roomName, consultationId }) {
 
 // Create a meeting token for a participant
 async function createMeetingToken({ roomName, isOwner = false, userName }) {
+  ensureProductionVideoProvider();
   if (!isConfigured) {
     return {
       token: `dev-token-${Date.now()}`,
@@ -103,6 +113,7 @@ async function createMeetingToken({ roomName, isOwner = false, userName }) {
 
 // Delete a room
 async function deleteRoom(roomName) {
+  ensureProductionVideoProvider();
   if (!isConfigured) return { ok: true };
   try {
     await dailyApiRequest('DELETE', `/rooms/${roomName}`);
@@ -115,6 +126,7 @@ async function deleteRoom(roomName) {
 
 // Get room info
 async function getRoomInfo(roomName) {
+  ensureProductionVideoProvider();
   if (!isConfigured) {
     return { name: roomName, participants: [] };
   }
@@ -131,7 +143,6 @@ async function getRoomInfo(roomName) {
 function getDailyConfig() {
   return {
     domain: DAILY_DOMAIN || 'mediconnect.daily.co',
-    apiKey: isConfigured ? process.env.STRIPE_PUBLISHABLE_KEY : null, // Don't expose API key
     isConfigured
   };
 }

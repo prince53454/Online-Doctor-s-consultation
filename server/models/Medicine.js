@@ -37,7 +37,6 @@ const medicineSchema = new mongoose.Schema({
 
 medicineSchema.index({ name: 'text', genericName: 'text', description: 'text', tags: 'text' });
 medicineSchema.index({ category: 1 });
-medicineSchema.index({ slug: 1 });
 medicineSchema.index({ price: 1 });
 
 module.exports = mongoose.model('Medicine', medicineSchema);

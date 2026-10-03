@@ -1,19 +1,21 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { useNotifications } from '../../context/NotificationContext';
 import api from '../../services/api';
 import toast from 'react-hot-toast';
 import './Admin.css';
 
 export default function AdminDoctors() {
   const { user, logout, loading: authLoading } = useAuth();
+  const { notifications } = useNotifications();
   const navigate = useNavigate();
   const [doctors, setDoctors] = useState([]);
   const [pendingDoctors, setPendingDoctors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState('pending');
 
-  const fetchDoctors = async () => {
+  const fetchDoctors = useCallback(async () => {
     try {
       const [allRes, pendingRes] = await Promise.all([
         api.get('/admin/doctors?limit=50'),
@@ -26,9 +28,12 @@ export default function AdminDoctors() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  useEffect(() => { if (!authLoading) fetchDoctors(); }, [authLoading]);
+  useEffect(() => { if (!authLoading) fetchDoctors(); }, [authLoading, fetchDoctors]);
+  useEffect(() => {
+    if (!authLoading && notifications[0]?._id) fetchDoctors();
+  }, [authLoading, fetchDoctors, notifications[0]?._id]);
 
   const handleApprove = async (id, approved) => {
     try {

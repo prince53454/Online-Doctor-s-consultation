@@ -32,7 +32,10 @@ router.post('/file', protect, uploadMiddleware.single('file'), async (req, res) 
     });
   } catch (error) {
     console.error('Upload error:', error);
-    res.status(500).json({ success: false, error: 'File upload failed' });
+    res.status(error.statusCode || 500).json({
+      success: false,
+      error: error.statusCode === 503 ? error.message : 'File upload failed'
+    });
   }
 });
 
@@ -63,7 +66,10 @@ router.post('/multiple', protect, uploadMiddleware.array('files', 5), async (req
     res.json({ success: true, files });
   } catch (error) {
     console.error('Multiple upload error:', error);
-    res.status(500).json({ success: false, error: 'File upload failed' });
+    res.status(error.statusCode || 500).json({
+      success: false,
+      error: error.statusCode === 503 ? error.message : 'File upload failed'
+    });
   }
 });
 
@@ -92,7 +98,10 @@ router.post('/avatar', protect, uploadMiddleware.single('file'), async (req, res
     });
   } catch (error) {
     console.error('Avatar upload error:', error);
-    res.status(500).json({ success: false, error: 'Avatar upload failed' });
+    res.status(error.statusCode || 500).json({
+      success: false,
+      error: error.statusCode === 503 ? error.message : 'Avatar upload failed'
+    });
   }
 });
 
@@ -118,7 +127,10 @@ router.get('/signature', protect, async (req, res) => {
       apiKey: process.env.CLOUDINARY_API_KEY
     });
   } catch (error) {
-    res.status(500).json({ success: false, error: 'Failed to generate signature' });
+    res.status(error.statusCode || 500).json({
+      success: false,
+      error: error.statusCode === 503 ? error.message : 'Failed to generate signature'
+    });
   }
 });
 
@@ -132,7 +144,10 @@ router.delete('/:publicId', protect, async (req, res) => {
     await deleteFile(publicId);
     res.json({ success: true, message: 'File deleted' });
   } catch (error) {
-    res.status(500).json({ success: false, error: 'Delete failed' });
+    res.status(error.statusCode || 500).json({
+      success: false,
+      error: error.statusCode === 503 ? error.message : 'Delete failed'
+    });
   }
 });
 

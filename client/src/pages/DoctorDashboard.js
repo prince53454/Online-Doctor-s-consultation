@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useNotifications } from '../context/NotificationContext';
 import api from '../services/api';
 import toast from 'react-hot-toast';
 import './DoctorDashboard.css';
 
 export default function DoctorDashboard() {
   const { user, loading: authLoading } = useAuth();
+  const { notifications } = useNotifications();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('overview');
   const [doctorProfile, setDoctorProfile] = useState(null);
@@ -60,6 +62,9 @@ export default function DoctorDashboard() {
   }, []);
 
   useEffect(() => { if (!authLoading) fetchDashboardData(); }, [authLoading, fetchDashboardData]);
+  useEffect(() => {
+    if (!authLoading && notifications[0]?._id) fetchDashboardData();
+  }, [authLoading, fetchDashboardData, notifications[0]?._id]);
 
   useEffect(() => {
     if (authLoading) return;
@@ -77,7 +82,7 @@ export default function DoctorDashboard() {
     const d = new Date(a.date);
     return d >= today && d < tomorrow && ['pending', 'confirmed'].includes(a.status);
   });
-  const pendingAppointments = appointments.filter(a => a.status === 'pending');
+  const pendingAppointments = appointments.filter(a => ['pending', 'rescheduled'].includes(a.status));
   const completedAppointments = appointments.filter(a => a.status === 'completed');
   const totalEarnings = earningsData?.earnings?.totalEarned || 0;
   const pendingBalance = earningsData?.earnings?.pendingBalance || 0;
@@ -168,12 +173,13 @@ export default function DoctorDashboard() {
       <div className="dash-hero">
         <div className="container">
           <div>
-            <h1>Welcome back, {user?.name}</h1>
+            <span className="dash-eyebrow">CLINIC WORKSPACE</span>
+            <h1>Good to see you, Dr. {user?.name?.split(' ')[0]}</h1>
             <p>{doctorProfile?.specialization || 'Doctor'} • {doctorProfile?.clinicName || 'MediConnect Pro'}</p>
           </div>
           <div className="dash-hero-right">
-            <span className="badge-online"><span className="dot" /> Online</span>
-            <button className="btn btn-primary" onClick={() => navigate('/profile')}>Edit Profile</button>
+            <span className="badge-online"><span className="dot" /> Doctor workspace</span>
+            <button className="btn btn-primary" onClick={() => navigate('/doctor/profile')}>Edit profile <span aria-hidden="true">↗</span></button>
           </div>
         </div>
       </div>
@@ -673,11 +679,13 @@ function AptItem({ apt, onClick, onAction }) {
         {apt.status}
       </span>
       <div className="apt-actions" onClick={e => e.stopPropagation()}>
-        {apt.status === 'pending' && (
+        {['pending', 'rescheduled'].includes(apt.status) && (
           <>
             <button className="btn btn-success btn-sm" style={{ padding: '4px 8px', fontSize: 11 }} onClick={() => onAction(apt._id, 'confirmed')}>✓</button>
-            <button className="btn btn-ghost btn-sm" style={{ padding: '4px 8px', fontSize: 11 }} onClick={() => onAction(apt._id, 'cancelled')}>✕</button>
           </>
+        )}
+        {['pending', 'confirmed', 'rescheduled'].includes(apt.status) && (
+          <button className="btn btn-ghost btn-sm" style={{ padding: '4px 8px', fontSize: 11 }} onClick={() => onAction(apt._id, 'cancelled')}>✕</button>
         )}
       </div>
     </div>
