@@ -80,6 +80,7 @@ const doctorSchema = new mongoose.Schema({
   profileImages: [String],
   isOnline: { type: Boolean, default: false },
   isApproved: { type: Boolean, default: false },
+  isRejected: { type: Boolean, default: false },
   isFeatured: { type: Boolean, default: false },
   responseTime: { type: String, default: '< 30 min' },
   acceptOnlineConsultation: { type: Boolean, default: true },

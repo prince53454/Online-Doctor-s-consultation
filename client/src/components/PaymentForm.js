@@ -2,49 +2,89 @@ import React, { useState, useEffect } from 'react';
 import api from '../services/api';
 import toast from 'react-hot-toast';
 
-/**
- * Razorpay Payment Component for Appointment Payments.
- * Creates a Razorpay order on the server and opens the Razorpay checkout.
- *
- * In development (no Razorpay keys), auto-confirms in mock mode.
- */
-export default function PaymentForm({ appointmentId, amount, onSuccess, onError }) {
+let razorpayScriptPromise;
+
+function loadRazorpayCheckout() {
+  if (window.Razorpay) return Promise.resolve();
+  if (razorpayScriptPromise) return razorpayScriptPromise;
+
+  razorpayScriptPromise = new Promise((resolve, reject) => {
+    let script = document.querySelector('script[src="https://checkout.razorpay.com/v1/checkout.js"]');
+    const timeout = window.setTimeout(() => {
+      reject(new Error('Razorpay checkout did not load. Check your connection and try again.'));
+    }, 15000);
+
+    const handleLoad = () => {
+      window.clearTimeout(timeout);
+      if (window.Razorpay) {
+        script.dataset.razorpayLoaded = 'true';
+        resolve();
+      } else {
+        reject(new Error('Razorpay checkout loaded incorrectly. Please try again.'));
+      }
+    };
+    const handleError = () => {
+      window.clearTimeout(timeout);
+      reject(new Error('Unable to load Razorpay checkout. Check your connection and try again.'));
+    };
+
+    if (!script) {
+      script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.async = true;
+    } else if (script.dataset.razorpayLoaded === 'true') {
+      window.clearTimeout(timeout);
+      reject(new Error('Razorpay checkout is unavailable. Please refresh and try again.'));
+      return;
+    }
+
+    script.addEventListener('load', handleLoad, { once: true });
+    script.addEventListener('error', handleError, { once: true });
+    if (!script.isConnected) document.body.appendChild(script);
+  }).catch(error => {
+    razorpayScriptPromise = null;
+    throw error;
+  });
+
+  return razorpayScriptPromise;
+}
+
+export default function PaymentForm({ appointmentId, amount, patient, onSuccess, onError }) {
   const [loading, setLoading] = useState(false);
   const [paymentConfig, setPaymentConfig] = useState(null);
+  const providerUnavailable = paymentConfig && !paymentConfig.mockMode && !paymentConfig.razorpay?.configured;
 
-  // Fetch payment provider config on mount
   useEffect(() => {
     api.get('/payments/config')
       .then(res => setPaymentConfig(res.data))
-      .catch(() => {});
-  }, []);
-
-  // Load Razorpay checkout script
-  useEffect(() => {
-    const existing = document.querySelector('script[src="https://checkout.razorpay.com/v1/checkout.js"]');
-    if (!existing) {
-      const script = document.createElement('script');
-      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-      script.async = true;
-      document.body.appendChild(script);
-    }
+      .catch(error => {
+        console.error('Payment configuration could not be loaded:', error);
+        toast.error('Could not check payment availability. Try again shortly.');
+      });
   }, []);
 
   const handlePay = async () => {
     setLoading(true);
     try {
-      // Step 1: Create Razorpay order on server
       const orderRes = await api.post('/payments/razorpay/create-order', { appointmentId });
       const { order, mock, appointment, razorpayKeyId } = orderRes.data;
 
-      // Mock mode (no Razorpay keys configured) — payment auto-confirmed on server
       if (mock) {
-        toast.success('Payment confirmed! (Development mode)');
+        setLoading(false);
+        toast.success('Demo payment confirmed. No money was charged.');
         onSuccess?.(appointment);
         return;
       }
 
-      // Step 2: Open real Razorpay checkout
+      if (!order?.id || !razorpayKeyId) {
+        throw new Error('Payment provider returned an incomplete order. Please try again.');
+      }
+
+      await loadRazorpayCheckout();
+      if (!window.Razorpay) {
+        throw new Error('Razorpay checkout is unavailable. Please try again.');
+      }
+
       const options = {
         key: razorpayKeyId,
         amount: order.amount,
@@ -53,7 +93,6 @@ export default function PaymentForm({ appointmentId, amount, onSuccess, onError 
         description: `Appointment Payment — ₹${amount}`,
         order_id: order.id,
         handler: async (response) => {
-          // Step 3: Verify payment on server
           try {
             const verifyRes = await api.post('/payments/razorpay/verify', {
               appointmentId,
@@ -61,22 +100,24 @@ export default function PaymentForm({ appointmentId, amount, onSuccess, onError 
               razorpay_payment_id: response.razorpay_payment_id,
               razorpay_signature: response.razorpay_signature
             });
-            toast.success('Payment successful! 🎉');
+            setLoading(false);
+            toast.success('Payment successful!');
             onSuccess?.(verifyRes.data.appointment);
           } catch (err) {
-            toast.error('Payment verification failed. Contact support.');
-            onError?.('Verification failed');
+            const message = err.response?.data?.error || 'Payment verification failed. Contact support before retrying.';
+            setLoading(false);
+            toast.error(message);
+            onError?.(message);
           }
         },
         prefill: {
-          name: '',
-          email: '',
-          contact: ''
+          name: patient?.name || '',
+          email: patient?.email || '',
+          contact: patient?.phone || ''
         },
-        theme: { color: '#4F46E5' },
+        theme: { color: '#276746' },
         modal: {
           ondismiss: () => {
-            toast.error('Payment cancelled');
             setLoading(false);
           }
         }
@@ -84,16 +125,17 @@ export default function PaymentForm({ appointmentId, amount, onSuccess, onError 
 
       const rzp = new window.Razorpay(options);
       rzp.on('payment.failed', (response) => {
-        toast.error(`Payment failed: ${response.error.description}`);
-        onError?.(response.error.description);
+        const message = response.error?.description || 'Payment failed. Please try again.';
+        setLoading(false);
+        toast.error(message);
+        onError?.(message);
       });
       rzp.open();
     } catch (error) {
-      const msg = error.response?.data?.error || 'Payment initialization failed';
+      const msg = error.response?.data?.error || error.message || 'Payment initialization failed';
+      setLoading(false);
       toast.error(msg);
       onError?.(msg);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -104,16 +146,28 @@ export default function PaymentForm({ appointmentId, amount, onSuccess, onError 
         <span className="payment-price">₹{amount}</span>
       </div>
 
-      <div className="payment-secure">
-        🔒 Secured by Razorpay — 256-bit SSL Encryption
-      </div>
+      {paymentConfig?.mockMode && !paymentConfig?.razorpay?.configured ? (
+        <div className="payment-secure">Development demo only — simulated checkout; no money will be charged.</div>
+      ) : paymentConfig?.razorpay?.configured ? (
+        <div className="payment-secure">🔒 Secure checkout powered by Razorpay</div>
+      ) : providerUnavailable ? (
+        <div className="payment-secure">Online payments are unavailable until Razorpay is configured.</div>
+      ) : (
+        <div className="payment-secure">Online payment availability is checked securely at checkout.</div>
+      )}
 
       <button
         className="btn btn-primary btn-lg btn-full"
         onClick={handlePay}
-        disabled={loading}
+        disabled={loading || providerUnavailable}
       >
-        {loading ? '⏳ Initializing Payment...' : `Pay ₹${amount}`}
+        {loading
+          ? '⏳ Processing...'
+          : providerUnavailable
+            ? 'Payments unavailable'
+            : paymentConfig?.mockMode && !paymentConfig?.razorpay?.configured
+              ? `Simulate ₹${amount} demo payment`
+              : `Pay ₹${amount}`}
       </button>
 
       <div className="payment-methods">
@@ -124,11 +178,6 @@ export default function PaymentForm({ appointmentId, amount, onSuccess, onError 
         <span className="pm-badge">💰 Wallets</span>
       </div>
 
-      {paymentConfig?.mockMode && !paymentConfig?.razorpay?.configured && (
-        <p style={{ textAlign: 'center', fontSize: 12, color: 'var(--gray-400)', marginTop: 8 }}>
-          Development mode — payments auto-confirmed
-        </p>
-      )}
     </div>
   );
 }

@@ -274,11 +274,11 @@ async function sendPaymentReceipt(appointment, patient, doctor) {
 async function sendDoctorApprovalStatus(doctor, approved) {
   return sendEmail({
     to: doctor.user?.email,
-    subject: approved ? '🎉 Your MediConnect Profile is Approved!' : '📋 MediConnect Profile Update Required',
+    subject: approved ? '🎉 Your MediConnect Profile is Approved!' : '📋 MediConnect Doctor Application Update',
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <div style="background: ${approved ? '#059669' : '#F59E0B'}; padding: 30px; text-align: center; border-radius: 12px 12px 0 0;">
-          <h1 style="color: white; margin: 0;">${approved ? 'Profile Approved! 🎉' : 'Profile Update Required'}</h1>
+        <div style="background: ${approved ? '#059669' : '#B42318'}; padding: 30px; text-align: center; border-radius: 12px 12px 0 0;">
+          <h1 style="color: white; margin: 0;">${approved ? 'Profile Approved! 🎉' : 'Application Not Approved'}</h1>
         </div>
         <div style="padding: 30px; background: #f9fafb;">
           <p>Dear <strong>${doctor.user?.name}</strong>,</p>
@@ -287,7 +287,7 @@ async function sendDoctorApprovalStatus(doctor, approved) {
                <div style="text-align: center; margin-top: 24px;">
                  <a href="${process.env.CLIENT_URL || 'http://localhost:3000'}/profile" style="background: #059669; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: 600;">Go to Dashboard</a>
                </div>`
-            : `<p>Thank you for registering on MediConnect. Your profile is under review. Our team will verify your credentials shortly. We may reach out if we need additional information.</p>`
+            : `<p>Our team could not approve your doctor profile at this time. Please contact support for details and next steps.</p>`
           }
         </div>
       </div>

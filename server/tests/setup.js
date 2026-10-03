@@ -20,7 +20,7 @@ afterAll(async () => {
 // Helper: generate JWT token for a user
 function generateToken(userId, role = 'patient') {
   return jwt.sign(
-    { id: userId, role, email: `${role}@test.com` },
+    { id: userId, role, email: `${role}@test.com`, ...(role === 'admin' ? { adminAccess: true } : {}) },
     process.env.JWT_SECRET || 'test-secret-key-for-jest',
     { expiresIn: '1h' }
   );

@@ -55,7 +55,7 @@ export default function AdminDashboard() {
       </aside>
 
       <main className="admin-main">
-        <div className="admin-header">
+        <div className="admin-header admin-header-overview">
           <img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=1200&h=200&fit=crop" alt="" className="admin-header-bg" />
           <div className="admin-header-copy">
             <span className="admin-eyebrow">PLATFORM OPERATIONS</span>

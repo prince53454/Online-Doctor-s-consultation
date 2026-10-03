@@ -7,8 +7,10 @@ import './Auth.css';
 export default function Login() {
   const [role, setRole] = useState('patient');
   const [formData, setFormData] = useState({ email: '', password: '' });
+  const [adminPassword, setAdminPassword] = useState('');
+  const [adminAccessOpen, setAdminAccessOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
+  const { login, adminAccess } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -44,37 +46,63 @@ export default function Login() {
     }
   };
 
+  const handleAdminAccess = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      const userData = await adminAccess(adminPassword);
+      toast.success(`Welcome back, ${userData.name}!`);
+      navigate('/admin', { replace: true });
+    } catch (error) {
+      toast.error(error.response?.data?.error || 'Admin access failed. Check the server connection and try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const isAdminAccess = adminAccessOpen;
+
   return (
     <div className="auth-page">
       <div className="auth-container">
         <div className="auth-left">
           <div className="auth-left-bg">
             <img
-              src={role === 'doctor'
-                ? "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=800&h=1000&fit=crop"
-                : "https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=800&h=1000&fit=crop"}
+              src={isAdminAccess
+                ? "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=800&h=1000&fit=crop"
+                : role === 'doctor'
+                  ? "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=800&h=1000&fit=crop"
+                  : "https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=800&h=1000&fit=crop"}
               alt=""
               className="auth-bg-img"
             />
           </div>
           <div className="auth-left-content">
             <div className="auth-left-icon">
-              <div className="auth-logo-circle">
-                {role === 'doctor' ? '👨‍⚕️' : '🏥'}
-              </div>
+              <div className="auth-logo-circle">{isAdminAccess ? '🔐' : role === 'doctor' ? '👨‍⚕️' : '🏥'}</div>
             </div>
             <h2>
-              {role === 'doctor'
-                ? 'Welcome Back, Doctor'
-                : 'Welcome Back to MediConnect'}
+              {isAdminAccess
+                ? 'Admin Portal'
+                : role === 'doctor'
+                  ? 'Welcome Back, Doctor'
+                  : 'Welcome Back to MediConnect'}
             </h2>
             <p>
-              {role === 'doctor'
-                ? 'Manage your patients, appointments, and practice from one dashboard.'
-                : 'Access world-class healthcare from anywhere. Your trusted partner in health.'}
+              {isAdminAccess
+                ? 'Enter the private administrator access password to continue.'
+                : role === 'doctor'
+                  ? 'Manage your patients, appointments, and practice from one dashboard.'
+                  : 'Access world-class healthcare from anywhere. Your trusted partner in health.'}
             </p>
             <div className="auth-features">
-              {role === 'doctor' ? (
+              {isAdminAccess ? (
+                <>
+                  <div className="auth-feature"><span className="feature-check">✓</span><span>Private administrator access</span></div>
+                  <div className="auth-feature"><span className="feature-check">✓</span><span>Platform and appointment controls</span></div>
+                  <div className="auth-feature"><span className="feature-check">✓</span><span>Doctor approvals and revenue tools</span></div>
+                </>
+              ) : role === 'doctor' ? (
                 <>
                   <div className="auth-feature"><span className="feature-check">✓</span><span>Manage Patient Appointments</span></div>
                   <div className="auth-feature"><span className="feature-check">✓</span><span>Video & Chat Consultations</span></div>
@@ -97,69 +125,112 @@ export default function Login() {
 
         <div className="auth-right">
           <div className="auth-form-wrapper">
-            <div className="role-tabs">
-              <button
-                className={`role-tab ${role === 'patient' ? 'active patient' : ''}`}
-                onClick={() => { setRole('patient'); setFormData({ email: '', password: '' }); }}
-              >🧑 I'm a Patient</button>
-              <button
-                className={`role-tab ${role === 'doctor' ? 'active doctor' : ''}`}
-                onClick={() => { setRole('doctor'); setFormData({ email: '', password: '' }); }}
-              >👨‍⚕️ I'm a Doctor</button>
-            </div>
+            {isAdminAccess ? (
+              <>
+                <h1>Admin Access</h1>
+                <p className="auth-subtitle">This password is checked securely by the server.</p>
+                <form onSubmit={handleAdminAccess} className="auth-form">
+                  <div className="form-group">
+                    <label className="form-label" htmlFor="admin-access-password">Admin access password</label>
+                    <input
+                      id="admin-access-password"
+                      type="password"
+                      className="form-input"
+                      placeholder="Enter admin access password"
+                      autoComplete="current-password"
+                      value={adminPassword}
+                      onChange={(e) => setAdminPassword(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <button type="submit" className="btn btn-admin btn-lg btn-full" disabled={loading}>
+                    {loading ? '⏳ Verifying...' : '🔐 Enter Admin Portal'}
+                  </button>
+                </form>
+                <button
+                  type="button"
+                  className="admin-access-back"
+                  onClick={() => { setAdminAccessOpen(false); setAdminPassword(''); }}
+                >
+                  Back to sign in
+                </button>
+              </>
+            ) : (
+              <>
+                <div className="role-tabs">
+                  <button
+                    className={`role-tab ${role === 'patient' ? 'active patient' : ''}`}
+                    onClick={() => { setRole('patient'); setFormData({ email: '', password: '' }); }}
+                  >🧑 I'm a Patient</button>
+                  <button
+                    className={`role-tab ${role === 'doctor' ? 'active doctor' : ''}`}
+                    onClick={() => { setRole('doctor'); setFormData({ email: '', password: '' }); }}
+                  >👨‍⚕️ I'm a Doctor</button>
+                </div>
 
-            <h1>Sign In</h1>
-            <p className="auth-subtitle">
-              {role === 'doctor'
-                ? 'Access your doctor dashboard and manage your practice'
-                : 'Find doctors, book appointments, and manage your health'}
-            </p>
+                <h1>Sign In</h1>
+                <p className="auth-subtitle">
+                  {role === 'doctor'
+                    ? 'Access your doctor dashboard and manage your practice'
+                    : 'Find doctors, book appointments, and manage your health'}
+                </p>
 
-            <form onSubmit={handleSubmit} className="auth-form">
-              <div className="form-group">
-                <label className="form-label">Email Address</label>
-                <input
-                  type="email"
-                  className="form-input"
-                  placeholder={role === 'doctor' ? 'doctor@mediconnect.com' : 'you@example.com'}
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  required
-                />
-              </div>
+                <form onSubmit={handleSubmit} className="auth-form">
+                  <div className="form-group">
+                    <label className="form-label" htmlFor="login-email">Email Address</label>
+                    <input
+                      id="login-email"
+                      type="email"
+                      className="form-input"
+                      placeholder={role === 'doctor' ? 'doctor@mediconnect.com' : 'you@example.com'}
+                      value={formData.email}
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      required
+                    />
+                  </div>
 
-              <div className="form-group">
-                <label className="form-label">Password</label>
-                <input
-                  type="password"
-                  className="form-input"
-                  placeholder="Enter your password"
-                  value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  required
-                />
-              </div>
+                  <div className="form-group">
+                    <label className="form-label" htmlFor="login-password">Password</label>
+                    <input
+                      id="login-password"
+                      type="password"
+                      className="form-input"
+                      placeholder="Enter your password"
+                      value={formData.password}
+                      onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                      required
+                    />
+                  </div>
 
-              <div style={{ textAlign: 'right', marginBottom: 16 }}>
-                <Link to="/forgot-password" className="form-link" style={{ fontSize: 13 }}>Forgot password?</Link>
-              </div>
+                  <div style={{ textAlign: 'right', marginBottom: 16 }}>
+                    <Link to="/forgot-password" className="form-link" style={{ fontSize: 13 }}>Forgot password?</Link>
+                  </div>
 
-              <button
-                type="submit"
-                className={`btn btn-lg btn-full ${role === 'doctor' ? 'btn-doctor' : 'btn-primary'}`}
-                disabled={loading}
-              >
-                {loading ? '⏳ Signing in...' : role === 'doctor' ? '👨‍⚕️ Sign In as Doctor' : '🧑 Sign In as Patient'}
-              </button>
-            </form>
+                  <button
+                    type="submit"
+                    className={`btn btn-lg btn-full ${role === 'doctor' ? 'btn-doctor' : 'btn-primary'}`}
+                    disabled={loading}
+                  >
+                    {loading ? '⏳ Signing in...' : role === 'doctor' ? '👨‍⚕️ Sign In as Doctor' : '🧑 Sign In as Patient'}
+                  </button>
+                </form>
 
-            <p className="auth-switch" style={{ marginTop: 24 }}>
-              {role === 'patient' ? (
-                <>Don't have an account? <Link to="/register">Sign Up Free</Link></>
-              ) : (
-                <>New doctor? <Link to="/register/doctor">Register Your Practice</Link></>
-              )}
-            </p>
+                <p className="auth-switch" style={{ marginTop: 24 }}>
+                  {role === 'patient' ? (
+                    <>Don't have an account? <Link to="/register">Sign Up Free</Link></>
+                  ) : (
+                    <>New doctor? <Link to="/register/doctor">Register Your Practice</Link></>
+                  )}
+                </p>
+                <button
+                  type="button"
+                  className="admin-portal-button"
+                  onClick={() => setAdminAccessOpen(true)}
+                >
+                  🔐 Admin Portal
+                </button>
+              </>
+            )}
           </div>
         </div>
       </div>

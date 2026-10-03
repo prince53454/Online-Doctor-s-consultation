@@ -35,9 +35,8 @@ describe('Payment Routes', () => {
         symptoms: 'Payment test symptoms'
       });
 
-    if (bookRes.status === 201) {
-      appointmentId = bookRes.body.appointment._id;
-    }
+    expect(bookRes.status).toBe(201);
+    appointmentId = bookRes.body.appointment._id;
   });
 
   // ─── PAYMENT CONFIG ───────────────────
@@ -63,7 +62,6 @@ describe('Payment Routes', () => {
   // ─── RAZORPAY MOCK PAYMENT ────────────
   describe('POST /api/payments/razorpay/create-order', () => {
     it('does not accept unconfigured mock payments in production', async () => {
-      if (!appointmentId) return;
       const originalNodeEnv = process.env.NODE_ENV;
       process.env.NODE_ENV = 'production';
 
@@ -82,8 +80,6 @@ describe('Payment Routes', () => {
     });
 
     it('should create order (mock mode auto-confirms)', async () => {
-      if (!appointmentId) return;
-
       const res = await request(app)
         .post('/api/payments/razorpay/create-order')
         .set('Authorization', `Bearer ${patientToken}`)
@@ -153,7 +149,7 @@ describe('Payment Routes', () => {
           symptoms: 'Stripe intent test'
         });
 
-      if (bookRes.status !== 201) return;
+      expect(bookRes.status).toBe(201);
 
       const res = await request(app)
         .post('/api/payments/create-intent')
@@ -190,7 +186,7 @@ describe('Payment Routes', () => {
           symptoms: 'Refund test'
         });
 
-      if (bookRes.status !== 201) return;
+      expect(bookRes.status).toBe(201);
       const aptId = bookRes.body.appointment._id;
 
       // Pay for it
@@ -229,9 +225,9 @@ describe('Payment Routes', () => {
 });
 
 function getNextMonday() {
-  const now = new Date();
-  const daysUntilMonday = (8 - now.getDay()) % 7 || 7;
-  const nextMonday = new Date(now);
-  nextMonday.setDate(now.getDate() + daysUntilMonday);
+  const nextMonday = new Date();
+  nextMonday.setUTCHours(0, 0, 0, 0);
+  const daysUntilMonday = (8 - nextMonday.getUTCDay()) % 7 || 7;
+  nextMonday.setUTCDate(nextMonday.getUTCDate() + daysUntilMonday);
   return nextMonday.toISOString().split('T')[0];
 }

@@ -25,6 +25,10 @@ const protect = async (req, res, next) => {
       return res.status(403).json({ success: false, error: 'Account deactivated' });
     }
 
+    if (req.user.role === 'admin' && decoded.adminAccess !== true) {
+      return res.status(403).json({ success: false, error: 'Admin access password is required' });
+    }
+
     next();
   } catch (error) {
     return res.status(401).json({ success: false, error: 'Not authorized - invalid token' });

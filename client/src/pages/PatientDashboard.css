@@ -242,6 +242,41 @@
 .pd-health-tip h4 { color: #1d4935; font-size: 14px; }
 .pd-health-tip p { color: #60746a; font-size: 12px; }
 
+.pd-page {
+  color: var(--pd-ink);
+  background:
+    radial-gradient(ellipse at 88% 14%, rgba(220, 237, 224, 0.42), transparent 29%),
+    #f4f7f4;
+}
+.pd-hero {
+  min-height: 198px;
+  align-items: center;
+  border-radius: 24px;
+  box-shadow: 0 22px 48px rgba(22, 52, 39, 0.15);
+}
+.pd-hero-actions .btn { min-height: 44px; }
+.pd-stat-card {
+  overflow: hidden;
+  background: linear-gradient(145deg, #fff, #fbfdfb);
+}
+.pd-stat-card::before {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: #91b99b;
+  content: '';
+}
+.pd-stat-card.blue::before { background: #7ba89b; }
+.pd-stat-card.purple::before { background: #a3a0bd; }
+.pd-stat-card.orange::before { background: #c9a16a; }
+.pd-card-header h3 { font-size: 15px; }
+.pd-action-btn:focus-visible,
+.pd-link:focus-visible,
+.pd-hero-actions .btn:focus-visible {
+  outline: 3px solid rgba(79, 143, 98, 0.45);
+  outline-offset: 3px;
+}
+
 @media (max-width: 1024px) {
   .pd-grid { grid-template-columns: minmax(0, 1fr) 290px; }
 }
@@ -267,4 +302,8 @@
   .pd-apt-item { flex-wrap: wrap; }
   .pd-apt-actions { margin-left: auto; }
   .pd-apt-time { margin-left: auto; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pd-stat-card, .pd-card, .pd-action-btn { transition: none; }
+  .pd-stat-card:hover, .pd-action-btn:hover { transform: none; }
 }

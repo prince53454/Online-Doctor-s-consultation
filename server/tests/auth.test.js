@@ -167,6 +167,83 @@ describe('Auth Routes', () => {
     });
   });
 
+  describe('POST /api/auth/admin-access', () => {
+    const adminAccessPassword = 'test-admin-access-password-with-over-32-characters';
+    let adminEmail;
+    let adminUserId;
+
+    beforeAll(async () => {
+      process.env.ADMIN_ACCESS_PASSWORD = adminAccessPassword;
+      const admin = await createTestUser({
+        name: 'Test Admin',
+        email: `admin_${Date.now()}@example.com`,
+        role: 'admin'
+      });
+      adminEmail = admin.email;
+      adminUserId = admin._id;
+    });
+
+    it('should issue an admin token only after the configured password is provided', async () => {
+      const res = await request(app)
+        .post('/api/auth/admin-access')
+        .send({ password: adminAccessPassword });
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.user.role).toBe('admin');
+      expect(res.body.token).toBeDefined();
+      expect(require('jsonwebtoken').verify(res.body.token, process.env.JWT_SECRET).adminAccess).toBe(true);
+
+      const adminRes = await request(app)
+        .get('/api/admin/dashboard')
+        .set('Authorization', `Bearer ${res.body.token}`);
+      expect(adminRes.status).toBe(200);
+    });
+
+    it('should reject an incorrect admin access password', async () => {
+      const res = await request(app)
+        .post('/api/auth/admin-access')
+        .send({ password: 'incorrect-admin-access-password' });
+
+      expect(res.status).toBe(401);
+      expect(res.body.error).toMatch(/invalid admin access password/i);
+    });
+
+    it('should not allow the regular login endpoint to bypass the admin access password', async () => {
+      const res = await request(app)
+        .post('/api/auth/login')
+        .send({ email: adminEmail, password: 'testpass123' });
+
+      expect(res.status).toBe(403);
+      expect(res.body.error).toMatch(/admin portal access password/i);
+    });
+
+    it('should reject an admin token that was not issued through the access-password gate', async () => {
+      const legacyToken = require('jsonwebtoken').sign(
+        { id: adminUserId, role: 'admin', email: adminEmail },
+        process.env.JWT_SECRET,
+        { expiresIn: '1h' }
+      );
+      const res = await request(app)
+        .get('/api/admin/dashboard')
+        .set('Authorization', `Bearer ${legacyToken}`);
+
+      expect(res.status).toBe(403);
+      expect(res.body.error).toMatch(/admin access password is required/i);
+    });
+
+    it('should fail closed when the admin access password is not configured', async () => {
+      const configuredPassword = process.env.ADMIN_ACCESS_PASSWORD;
+      delete process.env.ADMIN_ACCESS_PASSWORD;
+      const res = await request(app)
+        .post('/api/auth/admin-access')
+        .send({ password: adminAccessPassword });
+      process.env.ADMIN_ACCESS_PASSWORD = configuredPassword;
+
+      expect(res.status).toBe(503);
+    });
+  });
+
   // ─── GET PROFILE ──────────────────────
   describe('GET /api/auth/me', () => {
     it('should return user profile with valid token', async () => {

@@ -28,7 +28,7 @@ router.get('/dashboard', async (req, res) => {
       todayAppointments
     ] = await Promise.all([
       Doctor.countDocuments({ isApproved: true }),
-      Doctor.countDocuments({ isApproved: false }),
+      Doctor.countDocuments({ isApproved: false, isRejected: { $ne: true } }),
       User.countDocuments({ role: 'patient' }),
       Appointment.countDocuments(),
       Appointment.countDocuments({ status: { $in: ['pending', 'confirmed', 'rescheduled'] } }),
@@ -85,7 +85,7 @@ router.get('/dashboard', async (req, res) => {
 // @access  Private (Admin)
 router.get('/doctors/pending', async (req, res) => {
   try {
-    const doctors = await Doctor.find({ isApproved: false })
+    const doctors = await Doctor.find({ isApproved: false, isRejected: { $ne: true } })
       .populate('user', 'name email avatar phone')
       .sort('-createdAt')
       .lean();
@@ -111,6 +111,8 @@ router.put('/doctors/:id/approve', async (req, res) => {
       return res.status(404).json({ success: false, error: 'Doctor not found' });
     }
     doctor.isApproved = approved;
+    doctor.isRejected = !approved;
+    if (!approved) doctor.isFeatured = false;
     await doctor.save();
     await doctor.populate('user', 'name email avatar');
 
@@ -137,8 +139,15 @@ router.get('/doctors', async (req, res) => {
     let query = {};
 
     if (status === 'approved') query.isApproved = true;
-    if (status === 'pending') query.isApproved = false;
-    if (status === 'featured') query.isFeatured = true;
+    if (status === 'pending') {
+      query.isApproved = false;
+      query.isRejected = { $ne: true };
+    }
+    if (status === 'rejected') query.isRejected = true;
+    if (status === 'featured') {
+      query.isApproved = true;
+      query.isFeatured = true;
+    }
 
     const skip = (Number(page) - 1) * Number(limit);
 
@@ -170,6 +179,9 @@ router.put('/doctors/:id/feature', async (req, res) => {
     const doctor = await Doctor.findById(req.params.id);
     if (!doctor) {
       return res.status(404).json({ success: false, error: 'Doctor not found' });
+    }
+    if (!doctor.isApproved || doctor.isRejected) {
+      return res.status(409).json({ success: false, error: 'Only approved doctors can be featured' });
     }
 
     doctor.isFeatured = !doctor.isFeatured;

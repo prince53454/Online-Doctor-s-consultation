@@ -68,6 +68,7 @@ app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
 
 // Routes
 app.post('/api/auth/login', loginLimiter);
+app.post('/api/auth/admin-access', loginLimiter);
 app.post('/api/auth/forgot-password', passwordResetLimiter);
 app.put('/api/auth/reset-password', passwordResetLimiter);
 app.use('/api/auth', authRouter);

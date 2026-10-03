@@ -172,7 +172,31 @@ function getMockResponse(config) {
 
   // Payment config
   if (url.includes('/payments/config')) {
-    return { data: { success: true, razorpay: { configured: false, keyId: null }, stripe: { configured: false } } };
+    return { data: { success: true, mockMode: true, razorpay: { configured: false, keyId: null }, stripe: { configured: false } } };
+  }
+  if (url.includes('/payments/razorpay/create-order') && method === 'post') {
+    const body = JSON.parse(config.data || '{}');
+    const baseAppointment = getMockAppointments('patient')[0] || {};
+    const appointment = {
+      ...baseAppointment,
+      _id: body.appointmentId || 'mock_apt_new',
+      status: 'confirmed',
+      payment: {
+        ...baseAppointment.payment,
+        amount: baseAppointment.payment?.amount || 600,
+        status: 'completed',
+        method: 'mock',
+        paidAt: new Date().toISOString()
+      }
+    };
+    return {
+      data: {
+        success: true,
+        mock: true,
+        order: { id: 'mock_order', amount: Math.round(appointment.payment.amount * 100), currency: 'INR' },
+        appointment
+      }
+    };
   }
 
   // Settings public
@@ -213,6 +237,9 @@ api.interceptors.response.use(
 
     // If network error or backend down, try mock response
     if (!error.response || error.code === 'ERR_NETWORK' || error.code === 'ECONNABORTED') {
+      if (error.config?.url?.includes('/auth/admin-access')) {
+        return Promise.reject(error);
+      }
       try {
         const mockResponse = getMockResponse(error.config);
         return mockResponse;

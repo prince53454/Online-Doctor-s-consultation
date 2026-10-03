@@ -272,6 +272,7 @@ export default function BookAppointment() {
                 <PaymentForm
                   appointmentId={bookedAppointment._id}
                   amount={fee}
+                  patient={user}
                   onSuccess={handlePaymentSuccess}
                   onError={handlePaymentError}
                 />

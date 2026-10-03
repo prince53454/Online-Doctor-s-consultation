@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api';
 import toast from 'react-hot-toast';
 import './Admin.css';
+import './AdminTabs.css';
 
 export default function AdminUsers() {
   const { user, logout, loading: authLoading } = useAuth();
@@ -52,7 +53,10 @@ export default function AdminUsers() {
   return (
     <div className="admin-layout">
       <aside className="admin-sidebar">
-        <div className="admin-logo"><span style={{fontSize:'24px'}}>🩺</span><h2>MediConnect</h2></div>
+        <div className="admin-logo">
+          <span className="admin-logo-mark" aria-hidden="true">+</span>
+          <div><h2>MediConnect</h2><span className="admin-logo-caption">PLATFORM ADMIN</span></div>
+        </div>
         <nav className="admin-nav">
           <Link to="/admin" className="admin-nav-item">📊 Dashboard</Link>
           <Link to="/admin/doctors" className="admin-nav-item">👨‍⚕️ Doctors</Link>
@@ -67,18 +71,34 @@ export default function AdminUsers() {
       </aside>
 
       <main className="admin-main">
-        <div className="admin-header"><h1>Manage Users</h1></div>
+        <div className="admin-header admin-header-page">
+          <div className="admin-header-copy">
+            <span className="admin-page-eyebrow">ACCOUNT DIRECTORY</span>
+            <h1>Manage Users</h1>
+            <p>Find and manage patient and doctor accounts across MediConnect.</p>
+          </div>
+        </div>
 
         <div className="admin-toolbar">
           <form onSubmit={handleSearch} className="admin-search">
             <input className="form-input" placeholder="Search users..." value={search} onChange={(e) => setSearch(e.target.value)} />
             <button type="submit" className="btn btn-primary btn-sm">Search</button>
           </form>
-          <div className="admin-filters">
-            {['', 'patient', 'doctor', 'admin'].map(r => (
-              <button key={r} className={`filter-chip ${roleFilter === r ? 'active' : ''}`}
-                onClick={() => { setRoleFilter(r); setPage(1); }}>
-                {r || 'All Roles'}
+          <div className="admin-filters" role="group" aria-label="Filter users by role">
+            {[
+              { value: '', label: 'All roles' },
+              { value: 'patient', label: 'Patients' },
+              { value: 'doctor', label: 'Doctors' },
+              { value: 'admin', label: 'Admins' }
+            ].map(option => (
+              <button
+                key={option.value || 'all'}
+                type="button"
+                className={`admin-filter-chip ${roleFilter === option.value ? 'active' : ''}`}
+                aria-pressed={roleFilter === option.value}
+                onClick={() => { setRoleFilter(option.value); setPage(1); }}
+              >
+                {option.label}
               </button>
             ))}
           </div>

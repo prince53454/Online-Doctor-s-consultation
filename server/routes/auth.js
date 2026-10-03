@@ -34,6 +34,13 @@ const loginValidation = [
   body('password').isString().withMessage('Password is required').bail().notEmpty().withMessage('Password is required')
 ];
 
+const adminAccessValidation = [
+  body('password')
+    .isString().withMessage('Admin access password is required')
+    .bail()
+    .isLength({ min: 1, max: 256 }).withMessage('Invalid admin access password')
+];
+
 const resetPasswordValidation = [
   body('token').isString().withMessage('Token and password are required').bail().notEmpty().withMessage('Token and password are required'),
   body('password').isString().withMessage('Password must be at least 6 characters')
@@ -42,6 +49,7 @@ const resetPasswordValidation = [
 
 router.post('/register', registerValidation, validateRequest, authController.register);
 router.post('/login', loginValidation, validateRequest, authController.login);
+router.post('/admin-access', adminAccessValidation, validateRequest, authController.adminAccess);
 router.get('/me', protect, authController.getMe);
 router.post('/forgot-password', emailValidation, validateRequest, authController.forgotPassword);
 router.put('/reset-password', resetPasswordValidation, validateRequest, authController.resetPassword);

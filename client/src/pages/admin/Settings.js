@@ -134,7 +134,10 @@ export default function AdminSettings() {
   return (
     <div className="admin-layout">
       <aside className="admin-sidebar">
-        <div className="admin-logo"><span style={{ fontSize: '24px' }}>🩺</span><h2>MediConnect</h2></div>
+        <div className="admin-logo">
+          <span className="admin-logo-mark" aria-hidden="true">+</span>
+          <div><h2>MediConnect</h2><span className="admin-logo-caption">PLATFORM ADMIN</span></div>
+        </div>
         <nav className="admin-nav">
           <Link to="/admin" className="admin-nav-item">📊 Dashboard</Link>
           <Link to="/admin/doctors" className="admin-nav-item">👨‍⚕️ Doctors</Link>

@@ -191,6 +191,44 @@ describe('Patient, doctor, and admin workflows', () => {
     const unchangedDoctor = await Doctor.findById(doctor._id);
     expect(unchangedDoctor.isApproved).toBe(false);
   });
+
+  it('keeps rejected applications distinct and supports reconsideration and featuring', async () => {
+    const admin = await createTestUser({
+      email: `workflow_review_admin_${Date.now()}@test.com`,
+      role: 'admin'
+    });
+    const { doctor } = await createTestDoctor({
+      user: { email: `workflow_review_doctor_${Date.now()}@test.com` },
+      doctor: { isApproved: false }
+    });
+    const adminToken = generateToken(admin._id, 'admin');
+    const adminGet = path => request(app).get(path).set('Authorization', `Bearer ${adminToken}`);
+    const adminPut = path => request(app).put(path).set('Authorization', `Bearer ${adminToken}`);
+
+    const pendingBefore = await adminGet('/api/admin/doctors/pending');
+    expect(pendingBefore.body.doctors.some(item => item._id === doctor.id)).toBe(true);
+
+    const rejection = await adminPut(`/api/admin/doctors/${doctor.id}/approve`)
+      .send({ approved: false });
+    expect(rejection.status).toBe(200);
+    expect(rejection.body.doctor.isApproved).toBe(false);
+    expect(rejection.body.doctor.isRejected).toBe(true);
+
+    const pendingAfter = await adminGet('/api/admin/doctors/pending');
+    expect(pendingAfter.body.doctors.some(item => item._id === doctor.id)).toBe(false);
+    const rejectedList = await adminGet('/api/admin/doctors?status=rejected');
+    expect(rejectedList.body.doctors.some(item => item._id === doctor.id)).toBe(true);
+
+    const reconsideration = await adminPut(`/api/admin/doctors/${doctor.id}/approve`)
+      .send({ approved: true });
+    expect(reconsideration.status).toBe(200);
+    expect(reconsideration.body.doctor.isApproved).toBe(true);
+    expect(reconsideration.body.doctor.isRejected).toBe(false);
+
+    const featureResult = await adminPut(`/api/admin/doctors/${doctor.id}/feature`);
+    expect(featureResult.status).toBe(200);
+    expect(featureResult.body.doctor.isFeatured).toBe(true);
+  });
 });
 
 async function waitForNotification(query) {

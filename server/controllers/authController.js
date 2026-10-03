@@ -1,4 +1,5 @@
 const crypto = require('crypto');
+const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const Doctor = require('../models/Doctor');
 const { sendEmail } = require('../services/emailService');
@@ -48,6 +49,9 @@ async function login(req, res) {
     if (!user || !(await user.comparePassword(password))) {
       return res.status(401).json({ success: false, error: 'Invalid credentials' });
     }
+    if (user.role === 'admin') {
+      return res.status(403).json({ success: false, error: 'Use the Admin Portal access password' });
+    }
 
     user.lastLogin = new Date();
     await user.save();
@@ -72,6 +76,48 @@ async function login(req, res) {
   } catch (error) {
     console.error('Login error:', error);
     res.status(500).json({ success: false, error: 'Server error' });
+  }
+}
+
+async function adminAccess(req, res) {
+  const configuredPassword = process.env.ADMIN_ACCESS_PASSWORD;
+  if (!configuredPassword || configuredPassword.length < 32) {
+    return res.status(503).json({ success: false, error: 'Admin access is not configured' });
+  }
+
+  const suppliedHash = crypto.createHash('sha256').update(req.body.password).digest();
+  const configuredHash = crypto.createHash('sha256').update(configuredPassword).digest();
+  if (!crypto.timingSafeEqual(suppliedHash, configuredHash)) {
+    return res.status(401).json({ success: false, error: 'Invalid admin access password' });
+  }
+
+  try {
+    const user = await User.findOne({ role: 'admin', isActive: true }).sort({ createdAt: 1 });
+    if (!user) {
+      return res.status(503).json({ success: false, error: 'No active administrator account is available' });
+    }
+
+    user.lastLogin = new Date();
+    await user.save();
+    return res.json({
+      success: true,
+      token: jwt.sign(
+        { id: user._id, role: user.role, email: user.email, adminAccess: true },
+        process.env.JWT_SECRET,
+        { expiresIn: '12h' }
+      ),
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        avatar: user.avatar,
+        phone: user.phone
+      }
+    });
+  } catch (error) {
+    console.error('Admin access error:', error);
+    return res.status(500).json({ success: false, error: 'Unable to verify admin access' });
   }
 }
 
@@ -231,6 +277,7 @@ async function updateProfile(req, res) {
 module.exports = {
   register,
   login,
+  adminAccess,
   getMe,
   forgotPassword,
   resetPassword,

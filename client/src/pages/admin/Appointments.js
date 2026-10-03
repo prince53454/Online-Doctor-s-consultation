@@ -5,6 +5,7 @@ import { useNotifications } from '../../context/NotificationContext';
 import api from '../../services/api';
 import toast from 'react-hot-toast';
 import './Admin.css';
+import './AdminTabs.css';
 
 export default function AdminAppointments() {
   const { user, logout, loading: authLoading } = useAuth();
@@ -49,7 +50,10 @@ export default function AdminAppointments() {
   return (
     <div className="admin-layout">
       <aside className="admin-sidebar">
-        <div className="admin-logo"><span style={{fontSize:'24px'}}>🩺</span><h2>MediConnect</h2></div>
+        <div className="admin-logo">
+          <span className="admin-logo-mark" aria-hidden="true">+</span>
+          <div><h2>MediConnect</h2><span className="admin-logo-caption">PLATFORM ADMIN</span></div>
+        </div>
         <nav className="admin-nav">
           <Link to="/admin" className="admin-nav-item">📊 Dashboard</Link>
           <Link to="/admin/doctors" className="admin-nav-item">👨‍⚕️ Doctors</Link>
@@ -64,12 +68,31 @@ export default function AdminAppointments() {
       </aside>
 
       <main className="admin-main">
-        <div className="admin-header"><h1>Manage Appointments</h1></div>
+        <div className="admin-header admin-header-page">
+          <div className="admin-header-copy">
+            <span className="admin-page-eyebrow">CARE OPERATIONS</span>
+            <h1>Manage Appointments</h1>
+            <p>Monitor bookings and keep patient and doctor schedules in sync.</p>
+          </div>
+        </div>
 
-        <div className="admin-filters">
-          {['', 'pending', 'confirmed', 'rescheduled', 'completed', 'cancelled'].map(f => (
-            <button key={f} className={`filter-chip ${filter === f ? 'active' : ''}`} onClick={() => { setFilter(f); setPage(1); }}>
-              {f || 'All'}
+        <div className="admin-filters" role="group" aria-label="Filter appointments by status">
+          {[
+            { value: '', label: 'All appointments' },
+            { value: 'pending', label: 'Pending' },
+            { value: 'confirmed', label: 'Confirmed' },
+            { value: 'rescheduled', label: 'Rescheduled' },
+            { value: 'completed', label: 'Completed' },
+            { value: 'cancelled', label: 'Cancelled' }
+          ].map(option => (
+            <button
+              key={option.value || 'all'}
+              type="button"
+              className={`admin-filter-chip ${filter === option.value ? 'active' : ''}`}
+              aria-pressed={filter === option.value}
+              onClick={() => { setFilter(option.value); setPage(1); }}
+            >
+              {option.label}
             </button>
           ))}
         </div>
@@ -120,7 +143,13 @@ export default function AdminAppointments() {
                     </tr>
                   ))}
                   {appointments.length === 0 && (
-                    <tr><td colSpan="7" style={{ textAlign: 'center', padding: '40px' }}>No appointments found</td></tr>
+                    <tr><td colSpan="7">
+                      <div className="admin-empty-state">
+                        <span className="admin-empty-icon" aria-hidden="true">⌕</span>
+                        <h3>No {filter || 'appointments'} found</h3>
+                        <p>Try another status filter. New appointments will appear here as patients book care.</p>
+                      </div>
+                    </td></tr>
                   )}
                 </tbody>
               </table>

@@ -81,14 +81,11 @@ function PortalRedirect() {
     if (loading || redirected) return;
     // Use HTML injection OR ?portal= query param
     const portal = window.__MEDICONNECT_PORTAL__ || new URLSearchParams(window.location.search).get('portal');
-    if (!portal || !['doctor', 'admin'].includes(portal)) return;
+    if (!portal || portal !== 'doctor') return;
     const path = window.location.pathname;
     if (portal === 'doctor' && !path.startsWith('/doctor/')) {
       setRedirected(true);
       navigate('/doctor/dashboard');
-    } else if (portal === 'admin' && !path.startsWith('/admin')) {
-      setRedirected(true);
-      navigate('/admin');
     }
   }, [user, loading, redirected, navigate]);
   return null;

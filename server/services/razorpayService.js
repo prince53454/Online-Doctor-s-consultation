@@ -8,6 +8,8 @@
  * In development (no keys set), all payments are mocked instantly.
  */
 
+const crypto = require('crypto');
+
 const isRazorpayConfigured = () => {
   return !!(process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET &&
     !process.env.RAZORPAY_KEY_ID.includes('your_'));
@@ -30,7 +32,7 @@ const createOrder = async ({ amount, receipt, notes = {} }) => {
   if (!isRazorpayConfigured()) {
     return {
       id: 'mock_order_' + Date.now(),
-      amount: amount * 100, // Razorpay uses paise
+      amount: Math.round(amount * 100), // Razorpay uses paise
       currency: 'INR',
       receipt,
       status: 'created',
@@ -39,7 +41,7 @@ const createOrder = async ({ amount, receipt, notes = {} }) => {
   }
 
   const order = await razorpay.orders.create({
-    amount: amount * 100, // Convert to paise
+    amount: Math.round(amount * 100), // Convert to paise
     currency: 'INR',
     receipt: receipt || `rcpt_${Date.now()}`,
     notes
@@ -56,16 +58,30 @@ const verifyPayment = ({ razorpay_order_id, razorpay_payment_id, razorpay_signat
     return { verified: true, mock: true };
   }
 
-  const crypto = require('crypto');
+  if (![razorpay_order_id, razorpay_payment_id, razorpay_signature].every(value => typeof value === 'string' && value.length > 0)) {
+    return { verified: false, mock: false };
+  }
+
   const expectedSignature = crypto
     .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
     .update(`${razorpay_order_id}|${razorpay_payment_id}`)
-    .digest('hex');
+    .digest();
 
-  const verified = expectedSignature === razorpay_signature;
+  const suppliedSignature = /^[a-f0-9]{64}$/i.test(razorpay_signature)
+    ? Buffer.from(razorpay_signature, 'hex')
+    : Buffer.alloc(0);
+  const verified = suppliedSignature.length === expectedSignature.length &&
+    crypto.timingSafeEqual(expectedSignature, suppliedSignature);
 
   return { verified, mock: false };
 };
+
+const isCapturedPaymentForOrder = ({ payment, orderId, amount }) => (
+  payment?.status === 'captured' &&
+  payment.order_id === orderId &&
+  payment.amount === Math.round(amount * 100) &&
+  payment.currency === 'INR'
+);
 
 /**
  * Fetch a payment from Razorpay
@@ -87,7 +103,7 @@ const createRefund = async ({ paymentId, amount, notes = {} }) => {
   }
 
   const refundData = { payment_id: paymentId };
-  if (amount) refundData.amount = amount * 100; // paise
+  if (amount) refundData.amount = Math.round(amount * 100); // paise
   if (notes) refundData.notes = notes;
 
   return await razorpay.payments.refund(refundData);
@@ -97,6 +113,7 @@ module.exports = {
   isRazorpayConfigured,
   createOrder,
   verifyPayment,
+  isCapturedPaymentForOrder,
   fetchPayment,
   createRefund
 };

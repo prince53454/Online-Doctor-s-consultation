@@ -17,7 +17,7 @@ const isProduction = () => process.env.NODE_ENV === 'production';
 router.get('/config', (req, res) => {
   res.json({
     success: true,
-    mockMode: !isProduction(),
+    mockMode: !isProduction() && !razorpayService.isRazorpayConfigured(),
     razorpay: {
       configured: razorpayService.isRazorpayConfigured(),
       keyId: process.env.RAZORPAY_KEY_ID || null // Public key only
@@ -81,7 +81,7 @@ router.post('/razorpay/create-order', protect, async (req, res) => {
 
       return res.json({
         success: true,
-        order: { id: 'mock_order', amount: amount * 100, currency: 'INR' },
+        order: { id: 'mock_order', amount: Math.round(amount * 100), currency: 'INR' },
         appointment,
         razorpayKeyId: null,
         mock: true
@@ -149,6 +149,18 @@ router.post('/razorpay/verify', protect, async (req, res) => {
 
     if (!verified) {
       return res.status(400).json({ success: false, error: 'Payment verification failed' });
+    }
+
+    const payment = await razorpayService.fetchPayment(razorpay_payment_id);
+    if (!razorpayService.isCapturedPaymentForOrder({
+      payment,
+      orderId: razorpay_order_id,
+      amount: appointment.payment.amount
+    })) {
+      return res.status(400).json({
+        success: false,
+        error: 'Payment has not been captured for the expected amount and order'
+      });
     }
 
     appointment.payment.status = 'completed';
@@ -321,6 +333,13 @@ router.post('/create-intent', protect, async (req, res) => {
       appointment.status = 'confirmed';
       await appointment.save();
 
+      sendAppointmentConfirmation(appointment, appointment.patient, appointment.doctor)
+        .catch(error => console.error('Appointment confirmation email failed:', error.message));
+      sendDoctorBookingNotification(appointment, appointment.patient, appointment.doctor)
+        .catch(error => console.error('Doctor booking email failed:', error.message));
+      sendPaymentReceipt(appointment, appointment.patient, appointment.doctor)
+        .catch(error => console.error('Payment receipt email failed:', error.message));
+
       const io = req.app.get('io');
       notifyPaymentReceived(io, appointment, appointment.doctor).catch(console.error);
       revenueService.recordTransaction(appointment).catch(console.error);
@@ -357,6 +376,9 @@ router.post('/confirm', protect, async (req, res) => {
     if (!paymentId) {
       return res.status(400).json({ success: false, error: 'Payment ID is required' });
     }
+    if (appointment.payment.status !== 'pending' || appointment.status === 'cancelled') {
+      return res.status(409).json({ success: false, error: 'Appointment is not eligible for payment confirmation' });
+    }
 
     if (!isStripeConfigured()) {
       return res.status(isProduction() ? 503 : 400).json({
@@ -365,7 +387,12 @@ router.post('/confirm', protect, async (req, res) => {
       });
     }
     const payment = await confirmPayment(paymentId);
-    if (payment.status !== 'succeeded' || payment.metadata?.appointmentId !== appointment._id.toString()) {
+    if (
+      payment.status !== 'succeeded' ||
+      payment.metadata?.appointmentId !== appointment._id.toString() ||
+      payment.amount !== appointment.payment.amount ||
+      payment.currency !== appointment.payment.currency.toLowerCase()
+    ) {
       return res.status(400).json({ success: false, error: 'Payment not completed for this appointment' });
     }
 
@@ -375,6 +402,13 @@ router.post('/confirm', protect, async (req, res) => {
     appointment.payment.stripePaymentId = paymentId;
     appointment.status = 'confirmed';
     await appointment.save();
+
+    sendAppointmentConfirmation(appointment, appointment.patient, appointment.doctor)
+      .catch(error => console.error('Appointment confirmation email failed:', error.message));
+    sendDoctorBookingNotification(appointment, appointment.patient, appointment.doctor)
+      .catch(error => console.error('Doctor booking email failed:', error.message));
+    sendPaymentReceipt(appointment, appointment.patient, appointment.doctor)
+      .catch(error => console.error('Payment receipt email failed:', error.message));
 
     const io = req.app.get('io');
     notifyPaymentReceived(io, appointment, appointment.doctor).catch(console.error);

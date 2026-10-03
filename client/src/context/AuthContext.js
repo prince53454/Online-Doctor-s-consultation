@@ -8,9 +8,11 @@ const AuthContext = createContext(null);
 function getPreviewRole() {
   const injectedPortal = window.__MEDICONNECT_PORTAL__;
   const queryPortal = new URLSearchParams(window.location.search).get('portal');
-  const role = [injectedPortal, queryPortal].find(value => ['patient', 'doctor', 'admin'].includes(value));
+  const storedPortal = localStorage.getItem('mediconnect_portal');
+  const role = [injectedPortal, queryPortal, storedPortal].find(value => ['patient', 'doctor'].includes(value));
   if (role) localStorage.setItem('mediconnect_portal', role);
-  return role || localStorage.getItem('mediconnect_portal') || 'patient';
+  if (!role) localStorage.removeItem('mediconnect_portal');
+  return role || 'patient';
 }
 
 export function AuthProvider({ children }) {
@@ -89,6 +91,16 @@ export function AuthProvider({ children }) {
     return userData;
   };
 
+  const adminAccess = async (password) => {
+    const res = await api.post('/auth/admin-access', { password });
+    const { token: newToken, user: userData } = res.data;
+    localStorage.setItem('token', newToken);
+    setToken(newToken);
+    api.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
+    setUser(userData);
+    return userData;
+  };
+
   const register = async (data) => {
     const res = await api.post('/auth/register', data);
     const { token: newToken, user: userData } = res.data;
@@ -115,7 +127,7 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout, updateUser, refreshUser, token }}>
+    <AuthContext.Provider value={{ user, loading, login, adminAccess, register, logout, updateUser, refreshUser, token }}>
       {children}
     </AuthContext.Provider>
   );

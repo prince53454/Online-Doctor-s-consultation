@@ -46,7 +46,10 @@ export default function AdminRevenue() {
   return (
     <div className="admin-layout">
       <aside className="admin-sidebar">
-        <div className="admin-logo"><span style={{ fontSize: '24px' }}>🩺</span><h2>MediConnect</h2></div>
+        <div className="admin-logo">
+          <span className="admin-logo-mark" aria-hidden="true">+</span>
+          <div><h2>MediConnect</h2><span className="admin-logo-caption">PLATFORM ADMIN</span></div>
+        </div>
         <nav className="admin-nav">
           <Link to="/admin" className="admin-nav-item">📊 Dashboard</Link>
           <Link to="/admin/doctors" className="admin-nav-item">👨‍⚕️ Doctors</Link>
@@ -62,7 +65,13 @@ export default function AdminRevenue() {
       </aside>
 
       <main className="admin-main">
-        <div className="admin-header"><h1>💰 Revenue & Earnings</h1></div>
+        <div className="admin-header admin-header-page">
+          <div className="admin-header-copy">
+            <span className="admin-page-eyebrow">FINANCIAL OVERVIEW</span>
+            <h1>Revenue &amp; Earnings</h1>
+            <p>Track platform collections, doctor earnings, and payout activity.</p>
+          </div>
+        </div>
 
         {/* Revenue Overview Cards */}
         <div className="stats-cards-grid">

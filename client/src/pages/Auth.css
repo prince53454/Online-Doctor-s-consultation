@@ -312,7 +312,7 @@
 /* Role Tabs (Login Page) */
 .role-tabs {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
   margin-bottom: 24px;
   background: var(--gray-100);
@@ -321,11 +321,11 @@
 }
 
 .role-tab {
-  padding: 12px 16px;
+  padding: 12px 12px;
   border: none;
   border-radius: 10px;
   background: transparent;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
@@ -366,6 +366,50 @@
 .btn-doctor:hover {
   transform: translateY(-1px);
   box-shadow: 0 4px 16px rgba(5,150,105,0.3);
+}
+
+.btn-admin {
+  background: linear-gradient(135deg, #6D28D9, #8B5CF6);
+  color: white;
+  border: none;
+  padding: 14px 24px;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s;
+  font-family: var(--font-primary);
+}
+
+.btn-admin:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(124, 58, 237, 0.3);
+}
+
+.admin-portal-button,
+.admin-access-back {
+  display: block;
+  margin: 18px auto 0;
+  padding: 10px 16px;
+  border: 1px solid var(--gray-300);
+  border-radius: 10px;
+  background: white;
+  color: var(--gray-700);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.admin-portal-button:hover,
+.admin-access-back:hover {
+  border-color: #8B5CF6;
+  color: #6D28D9;
+}
+
+.admin-access-back {
+  border: 0;
+  text-decoration: underline;
 }
 
 /* Auth Logo Circle */

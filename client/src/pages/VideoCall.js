@@ -12,6 +12,11 @@ const socket = io(SOCKET_URL, {
   autoConnect: false
 });
 
+const stopStream = (stream) => {
+  if (!stream) return;
+  stream.getTracks().forEach(track => track.stop());
+};
+
 export default function VideoCall() {
   const { roomId } = useParams();
   const { user, token } = useAuth();
@@ -37,31 +42,43 @@ export default function VideoCall() {
   const screenStreamRef = useRef(null);
   const timerRef = useRef(null);
 
+  const startCameraPreview = useCallback(async (nextAudioOnly = audioOnly) => {
+    if (!navigator?.mediaDevices?.getUserMedia) {
+      setCameraReady(true);
+      return;
+    }
+
+    try {
+      stopStream(localStreamRef.current);
+      localStreamRef.current = null;
+
+      const constraints = nextAudioOnly ? { audio: true } : { video: true, audio: true };
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      localStreamRef.current = stream;
+
+      if (localVideoRef.current) {
+        localVideoRef.current.srcObject = nextAudioOnly ? null : stream;
+      }
+
+      setCameraReady(true);
+    } catch (err) {
+      console.warn('Camera not available:', err.message);
+      setCameraReady(true);
+    }
+  }, [audioOnly]);
+
   // Initialize consultation and show waiting room
   const initCall = useCallback(async () => {
     try {
       const res = await api.get(`/consultations/${roomId}`);
       setConsultation(res.data.consultation);
       setVideoConfig(res.data.videoConfig);
-
-      // Start camera preview in waiting room
-      try {
-        const constraints = audioOnly ? { audio: true } : { video: true, audio: true };
-        const stream = await navigator.mediaDevices.getUserMedia(constraints);
-        localStreamRef.current = stream;
-        if (localVideoRef.current && !audioOnly) {
-          localVideoRef.current.srcObject = stream;
-        }
-        setCameraReady(true);
-      } catch (err) {
-        console.warn('Camera not available:', err.message);
-        setCameraReady(true); // Allow joining without camera
-      }
+      await startCameraPreview();
     } catch (error) {
       console.error('Video call init error:', error);
       toast.error('Failed to load consultation details.');
     }
-  }, [roomId, audioOnly]);
+  }, [roomId, startCameraPreview]);
 
   // Join call from waiting room
   const joinCall = async () => {
@@ -111,9 +128,8 @@ export default function VideoCall() {
     });
 
     return () => {
-      if (localStreamRef.current) {
-        localStreamRef.current.getTracks().forEach(track => track.stop());
-      }
+      stopStream(localStreamRef.current);
+      localStreamRef.current = null;
       socket.emit('leave-room', { roomId });
       socket.off('video-signal');
       socket.off('chat-message');
@@ -133,17 +149,23 @@ export default function VideoCall() {
   }, [connected]);
 
   const toggleMute = () => {
-    if (localStreamRef.current) {
-      localStreamRef.current.getAudioTracks().forEach(track => { track.enabled = isMuted; });
-      setIsMuted(!isMuted);
-    }
+    setIsMuted(prev => {
+      const next = !prev;
+      if (localStreamRef.current) {
+        localStreamRef.current.getAudioTracks().forEach(track => { track.enabled = next ? false : true; });
+      }
+      return next;
+    });
   };
 
   const toggleVideo = () => {
-    if (localStreamRef.current) {
-      localStreamRef.current.getVideoTracks().forEach(track => { track.enabled = isVideoOff; });
-      setIsVideoOff(!isVideoOff);
-    }
+    setIsVideoOff(prev => {
+      const next = !prev;
+      if (localStreamRef.current) {
+        localStreamRef.current.getVideoTracks().forEach(track => { track.enabled = next ? false : true; });
+      }
+      return next;
+    });
   };
 
   const toggleScreenShare = async () => {
@@ -248,27 +270,34 @@ export default function VideoCall() {
           {/* Controls */}
           <div className="wr-controls">
             <button className={`wr-ctrl-btn ${isMuted ? 'off' : ''}`} onClick={() => {
-              setIsMuted(!isMuted);
-              if (localStreamRef.current) {
-                localStreamRef.current.getAudioTracks().forEach(t => { t.enabled = isMuted; });
-              }
+              setIsMuted(prev => {
+                const next = !prev;
+                if (localStreamRef.current) {
+                  localStreamRef.current.getAudioTracks().forEach(t => { t.enabled = !next; });
+                }
+                return next;
+              });
             }}>{isMuted ? '🔇' : '🎤'}</button>
-            <button className={`wr-ctrl-btn ${isVideoOff || audioOnly ? 'off' : ''}`} onClick={() => {
+            <button className={`wr-ctrl-btn ${isVideoOff || audioOnly ? 'off' : ''}`} onClick={async () => {
               if (audioOnly) {
                 setAudioOnly(false);
-                // Re-init camera
-                navigator.mediaDevices.getUserMedia({ video: true, audio: true }).then(stream => {
-                  localStreamRef.current = stream;
-                  if (localVideoRef.current) localVideoRef.current.srcObject = stream;
-                });
-              } else {
-                setIsVideoOff(!isVideoOff);
-                if (localStreamRef.current) {
-                  localStreamRef.current.getVideoTracks().forEach(t => { t.enabled = isVideoOff; });
-                }
+                await startCameraPreview(false);
+                return;
               }
+
+              setIsVideoOff(prev => {
+                const next = !prev;
+                if (localStreamRef.current) {
+                  localStreamRef.current.getVideoTracks().forEach(t => { t.enabled = !next; });
+                }
+                return next;
+              });
             }}>{isVideoOff || audioOnly ? '📷' : '📹'}</button>
-            <button className={`wr-ctrl-btn ${audioOnly ? 'active' : ''}`} onClick={() => setAudioOnly(!audioOnly)} title="Toggle audio-only">
+            <button className={`wr-ctrl-btn ${audioOnly ? 'active' : ''}`} onClick={async () => {
+              const nextAudioOnly = !audioOnly;
+              setAudioOnly(nextAudioOnly);
+              await startCameraPreview(nextAudioOnly);
+            }} title="Toggle audio-only">
               {audioOnly ? '🔊 Audio Only' : '🎤 Voice Call'}
             </button>
           </div>
