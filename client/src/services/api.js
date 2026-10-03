@@ -235,11 +235,14 @@ api.interceptors.response.use(
       window.location.href = '/login';
     }
 
-    // If network error or backend down, try mock response
-    if (!error.response || error.code === 'ERR_NETWORK' || error.code === 'ECONNABORTED') {
-      if (error.config?.url?.includes('/auth/admin-access')) {
-        return Promise.reject(error);
-      }
+    // If network error or backend down, try mock response, but never mock admin access checks.
+    const isAdminAccessRequest = error.config?.url?.includes('/auth/admin-access');
+    const canUseMockResponse = !error.response ||
+      error.code === 'ERR_NETWORK' ||
+      error.code === 'ECONNABORTED' ||
+      error.response?.status === 404 ||
+      error.response?.status === 503;
+    if (canUseMockResponse && !isAdminAccessRequest) {
       try {
         const mockResponse = getMockResponse(error.config);
         return mockResponse;

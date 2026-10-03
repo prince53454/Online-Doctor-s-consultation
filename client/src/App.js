@@ -96,7 +96,7 @@ function AppRoutes() {
     <React.Suspense fallback={<div className="page-loader"><div className="spinner" /></div>}>
     <Routes>
       {/* ── Patient Frontend (direct access) ── */}
-      <Route path="/" element={window.__MEDICONNECT_PORTAL__ ? <><Navbar /><Home /><Footer /></> : <Register />} />
+      <Route path="/" element={<><Navbar /><Home /><Footer /></>} />
       <Route path="/dashboard" element={protectedElement(['patient'], <><Navbar /><PatientDashboard /><Footer /></>)} />
       <Route path="/doctors" element={<><Navbar /><Doctors /><Footer /></>} />
       <Route path="/doctors/:id" element={<><Navbar /><DoctorProfile /><Footer /></>} />

@@ -27,7 +27,13 @@ export function AuthProvider({ children }) {
     if (!backendUp) {
       if (demoModeEnabled) {
         setDemoMode();
-        setUser(getMockUser(getPreviewRole()));
+        let role = getPreviewRole();
+        if (token) {
+          if (token.includes('doctor')) role = 'doctor';
+          else if (token.includes('admin')) role = 'admin';
+          else if (token.includes('patient')) role = 'patient';
+        }
+        setUser(getMockUser(role));
       } else {
         clearDemoMode();
         setUser(null);
