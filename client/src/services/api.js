@@ -212,7 +212,7 @@ api.interceptors.response.use(
     }
 
     // If network error or backend down, try mock response
-    if (!error.response || error.code === 'ERR_NETWORK' || error.code === 'ECONNABORTED') {
+    if (!error.response || error.code === 'ERR_NETWORK' || error.code === 'ECONNABORTED' || error.response?.status === 404 || error.response?.status === 503) {
       try {
         const mockResponse = getMockResponse(error.config);
         return mockResponse;

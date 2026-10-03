@@ -3,14 +3,18 @@
   "version": "1.0.0",
   "description": "Production-level Online Doctor Appointment & Telemedicine Platform",
   "private": true,
+  "workspaces": [
+    "client",
+    "server"
+  ],
   "scripts": {
-    "install:all": "npm install && cd server && npm install && cd ../client && npm install",
-    "dev": "concurrently \"npm run server\" \"npm run client\"",
-    "server": "cd server && npm run dev",
-    "client": "cd client && npm start",
-    "build": "cd client && npm run build",
-    "seed": "cd server && node seeds/seed.js",
-    "typecheck": "cd client && npx tsc --noEmit"
+    "dev": "npm run dev --workspace=client",
+    "start": "npm run dev --workspace=client",
+    "build": "npm run build --workspace=client",
+    "client": "npm run dev --workspace=client",
+    "server": "npm run dev --workspace=server",
+    "seed": "npm run seed --workspace=server",
+    "typecheck": "npm run typecheck --workspace=client"
   },
   "devDependencies": {
     "concurrently": "^8.2.0"

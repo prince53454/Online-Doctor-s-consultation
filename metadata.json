@@ -1,0 +1,7 @@
+{
+  "name": "MediConnect Pro",
+  "description": "Online doctor appointments, telemedicine consultations, AI symptom checker, pharmacy, and health management platform.",
+  "capabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
