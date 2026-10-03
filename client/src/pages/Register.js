@@ -96,8 +96,6 @@ export default function Register() {
         {/* Right Panel — Form */}
         <div className="auth-right">
           <div className="auth-form-wrapper">
-            <Link to="/" className="auth-back">← Back to Home</Link>
-
             <h1>Create Account</h1>
             <p className="auth-subtitle">Choose your role to get started</p>
 

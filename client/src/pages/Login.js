@@ -97,8 +97,6 @@ export default function Login() {
 
         <div className="auth-right">
           <div className="auth-form-wrapper">
-            <Link to="/" className="auth-back">← Back to Home</Link>
-
             <div className="role-tabs">
               <button
                 className={`role-tab ${role === 'patient' ? 'active patient' : ''}`}
