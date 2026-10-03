@@ -54,12 +54,18 @@ import ResetPassword from './pages/ResetPassword';
 import NotFound from './pages/NotFound';
 
 function RequireAuth({ roles, children }) {
-  const { user, loading } = useAuth();
+  const { user, loading, adminAccessGranted } = useAuth();
   const location = useLocation();
 
   if (loading) return <div className="page-loader"><div className="spinner" /></div>;
   if (!user) return <Navigate to="/login" state={{ from: location }} replace />;
+  if (roles.includes('admin') && !adminAccessGranted) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
   if (!roles.includes(user.role)) {
+    if (roles.includes('admin')) {
+      return <Navigate to="/login" state={{ from: location }} replace />;
+    }
     const home = user.role === 'admin' ? '/admin' : user.role === 'doctor' ? '/doctor/dashboard' : '/dashboard';
     return <Navigate to={home} replace />;
   }

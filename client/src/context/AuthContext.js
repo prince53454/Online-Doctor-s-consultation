@@ -17,6 +17,7 @@ function getPreviewRole() {
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
+  const [adminAccessGranted, setAdminAccessGranted] = useState(false);
   const [loading, setLoading] = useState(true);
   const [token, setToken] = useState(localStorage.getItem('token'));
 
@@ -28,14 +29,13 @@ export function AuthProvider({ children }) {
       if (demoModeEnabled) {
         setDemoMode();
         let role = getPreviewRole();
-        if (token) {
-          if (token.includes('doctor')) role = 'doctor';
-          else if (token.includes('admin')) role = 'admin';
-          else if (token.includes('patient')) role = 'patient';
-        }
+        if (token?.includes('doctor')) role = 'doctor';
+        else if (token?.includes('patient')) role = 'patient';
+        setAdminAccessGranted(false);
         setUser(getMockUser(role));
       } else {
         clearDemoMode();
+        setAdminAccessGranted(false);
         setUser(null);
       }
       setLoading(false);
@@ -54,11 +54,13 @@ export function AuthProvider({ children }) {
           userData.isApproved = Boolean(res.data.doctorProfile?.isApproved);
           userData.doctorProfile = res.data.doctorProfile || null;
         }
+        setAdminAccessGranted(userData.role === 'admin');
         setUser(userData);
       } catch (error) {
         console.error('Auth error:', error);
         localStorage.removeItem('token');
         setToken(null);
+        setAdminAccessGranted(false);
         setUser(null);
       } finally {
         setLoading(false);
@@ -76,6 +78,7 @@ export function AuthProvider({ children }) {
       userData.isApproved = Boolean(res.data.doctorProfile?.isApproved);
       userData.doctorProfile = res.data.doctorProfile || null;
     }
+    setAdminAccessGranted(userData.role === 'admin');
     setUser(userData);
     return userData;
   }, []);
@@ -85,8 +88,12 @@ export function AuthProvider({ children }) {
   }, [loadUser]);    const login = async (email, password) => {
     const res = await api.post('/auth/login', { email, password });
     const { token: newToken, user: userData, doctorProfile } = res.data;
+    if (userData.role === 'admin') {
+      throw new Error('Admin access requires the Admin Portal password and a server connection.');
+    }
     localStorage.setItem('token', newToken);
     setToken(newToken);
+    setAdminAccessGranted(false);
     api.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
     // Attach doctor approval status
     if (userData.role === 'doctor') {
@@ -102,6 +109,7 @@ export function AuthProvider({ children }) {
     const { token: newToken, user: userData } = res.data;
     localStorage.setItem('token', newToken);
     setToken(newToken);
+    setAdminAccessGranted(true);
     api.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
     setUser(userData);
     return userData;
@@ -112,6 +120,7 @@ export function AuthProvider({ children }) {
     const { token: newToken, user: userData } = res.data;
     localStorage.setItem('token', newToken);
     setToken(newToken);
+    setAdminAccessGranted(false);
     api.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
     if (userData.role === 'doctor') {
       userData.isApproved = false;
@@ -124,6 +133,7 @@ export function AuthProvider({ children }) {
   const logout = () => {
     localStorage.removeItem('token');
     setToken(null);
+    setAdminAccessGranted(false);
     setUser(null);
     delete api.defaults.headers.common['Authorization'];
   };
@@ -133,7 +143,7 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, adminAccess, register, logout, updateUser, refreshUser, token }}>
+    <AuthContext.Provider value={{ user, loading, adminAccessGranted, login, adminAccess, register, logout, updateUser, refreshUser, token }}>
       {children}
     </AuthContext.Provider>
   );
