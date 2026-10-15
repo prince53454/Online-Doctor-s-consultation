@@ -8,13 +8,14 @@
     "server"
   ],
   "scripts": {
-    "dev": "npm run dev --workspace=client",
-    "start": "npm run dev --workspace=client",
+    "dev": "concurrently -k -n api,web \"npm run server\" \"npm run client\"",
+    "start": "npm run start --workspace=server",
     "build": "npm run build --workspace=client",
     "client": "npm run dev --workspace=client",
     "server": "npm run dev --workspace=server",
     "seed": "npm run seed --workspace=server",
-    "typecheck": "npm run typecheck --workspace=client"
+    "test": "npm run test --workspace=server",
+    "check": "npm run build && npm test"
   },
   "devDependencies": {
     "concurrently": "^8.2.0"

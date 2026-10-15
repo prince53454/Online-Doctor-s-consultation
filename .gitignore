@@ -40,3 +40,10 @@ coverage/
 # Misc
 *.pem
 *.cache
+
+# Runtime files
+server/storage/*
+!server/storage/.gitkeep
+.vercel
+.env*
+!.env.example

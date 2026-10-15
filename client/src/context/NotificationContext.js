@@ -17,7 +17,7 @@ export function NotificationProvider({ children }) {
   useEffect(() => {
     if (!user || !token) return;
 
-    const newSocket = io(SOCKET_URL, { withCredentials: true, auth: { token } });
+    const newSocket = io(SOCKET_URL, { transports: ['websocket'], withCredentials: true, auth: { token } });
     setSocket(newSocket);
 
     newSocket.on('notification', (notification) => {

@@ -1,0 +1,13 @@
+.git
+.github
+.vercel
+.env*
+**/.env*
+!**/.env.example
+**/node_modules
+**/*.log
+server/storage
+server/tests
+server/scripts
+client/build
+docs

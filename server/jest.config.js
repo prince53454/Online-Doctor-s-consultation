@@ -1,10 +1,11 @@
 module.exports = {
   testEnvironment: 'node',
+  setupFiles: ['<rootDir>/tests/helpers/env.js'],
   testMatch: ['**/tests/**/*.test.js'],
   collectCoverageFrom: [
-    'routes/**/*.js',
-    'middleware/**/*.js',
-    'services/**/*.js',
+    'src/routes/**/*.js',
+    'src/middleware/**/*.js',
+    'src/services/**/*.js',
     '!node_modules'
   ],
   testTimeout: 30000

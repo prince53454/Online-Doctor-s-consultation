@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import api from '../services/api';
-import { getMockUser, isBackendAvailable, setDemoMode, clearDemoMode } from '../services/mockData';
+import { getMockUser, isBackendAvailable, setDemoMode, clearDemoMode } from '../data/mockData';
 import { DEMO_MODE as demoModeEnabled } from '../config/env';
 
 const AuthContext = createContext(null);

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import NotificationBell from '../NotificationBell';
+import NotificationBell from '../notifications/NotificationBell';
 import './DoctorNavbar.css';
 
 const NAV_ITEMS = [

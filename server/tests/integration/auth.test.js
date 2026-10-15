@@ -1,0 +1,414 @@
+const request = require('supertest');
+const mongoose = require('mongoose');
+const crypto = require('crypto');
+const { generateToken, createTestUser } = require('../helpers/setup');
+
+// We test against the Express app directly (no server.listen needed)
+let app;
+
+beforeAll(() => {
+  // Set env for tests
+  process.env.JWT_SECRET = process.env.JWT_SECRET || 'test-secret-key-for-jest';
+  process.env.JWT_EXPIRE = '1h';
+
+  // Import app after env is set
+  app = require('../../src/app');
+});
+
+describe('Auth Routes', () => {
+  let testUser;
+  let testEmail;
+
+  // ─── REGISTER ─────────────────────────
+  describe('POST /api/auth/register', () => {
+    it('should register a new patient', async () => {
+      testEmail = `patient_${Date.now()}@TEST.COM`;
+      const res = await request(app)
+        .post('/api/auth/register')
+        .send({
+          name: 'Test Patient',
+          email: testEmail,
+          password: 'password123',
+          phone: '+919876543210',
+          role: 'patient'
+        });
+
+      expect(res.status).toBe(201);
+      expect(res.body.success).toBe(true);
+      expect(res.body.token).toBeDefined();
+      expect(res.body.user.name).toBe('Test Patient');
+      expect(res.body.user.email).toBe(testEmail.toLowerCase());
+      expect(res.body.user.role).toBe('patient');
+      expect(res.body.user.password).toBeUndefined(); // Password not leaked
+    });
+
+    it.each(['not-an-email', 'missing-at.example.com', 'person@invalid'])(
+      'should reject malformed email address %s',
+      async (email) => {
+        const res = await request(app)
+          .post('/api/auth/register')
+          .send({ name: 'Invalid Email', email, password: 'password123' });
+
+        expect(res.status).toBe(400);
+        expect(res.body.success).toBe(false);
+        expect(res.body.errors.some(error => error.path === 'email')).toBe(true);
+      }
+    );
+
+    it('should accept email aliases and modern long top-level domains', async () => {
+      const res = await request(app)
+        .post('/api/auth/register')
+        .send({
+          name: 'Valid Email',
+          email: `person+care_${Date.now()}@example.technology`,
+          password: 'password123'
+        });
+
+      expect(res.status).toBe(201);
+      expect(res.body.user.email).toMatch(/person\+care_.*@example\.technology$/);
+    });
+
+    it('should reject duplicate email', async () => {
+      const res = await request(app)
+        .post('/api/auth/register')
+        .send({
+          name: 'Duplicate',
+          email: testEmail,
+          password: 'password123'
+        });
+
+      expect(res.status).toBe(400);
+      expect(res.body.error).toMatch(/already registered/i);
+    });
+
+    it('should reject short password', async () => {
+      const res = await request(app)
+        .post('/api/auth/register')
+        .send({
+          name: 'Short Pass',
+          email: `short_${Date.now()}@test.com`,
+          password: '12345'
+        });
+
+      expect(res.status).toBe(400);
+    });
+
+    it('should reject missing name', async () => {
+      const res = await request(app)
+        .post('/api/auth/register')
+        .send({
+          email: `noname_${Date.now()}@test.com`,
+          password: 'password123'
+        });
+
+      expect(res.status).toBe(400);
+    });
+
+    it('should not allow admin role via registration', async () => {
+      const res = await request(app)
+        .post('/api/auth/register')
+        .send({
+          name: 'Hacker',
+          email: `hacker_${Date.now()}@test.com`,
+          password: 'password123',
+          role: 'admin'
+        });
+
+      expect(res.status).toBe(201);
+      expect(res.body.user.role).toBe('patient'); // Forced to patient
+    });
+  });
+
+  // ─── LOGIN ────────────────────────────
+  describe('POST /api/auth/login', () => {
+    it('should login with valid credentials', async () => {
+      const res = await request(app)
+        .post('/api/auth/login')
+        .send({ email: testEmail.toUpperCase(), password: 'password123' });
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.token).toBeDefined();
+      expect(res.body.user.email).toBe(testEmail.toLowerCase());
+    });
+
+    it('should reject malformed email addresses before querying users', async () => {
+      const res = await request(app)
+        .post('/api/auth/login')
+        .send({ email: 'not-an-email', password: 'password123' });
+
+      expect(res.status).toBe(400);
+      expect(res.body.errors.some(error => error.path === 'email')).toBe(true);
+    });
+
+    it('should reject wrong password', async () => {
+      const res = await request(app)
+        .post('/api/auth/login')
+        .send({ email: testEmail, password: 'wrongpassword' });
+
+      expect(res.status).toBe(401);
+      expect(res.body.error).toMatch(/invalid credentials/i);
+    });
+
+    it('should reject non-existent email', async () => {
+      const res = await request(app)
+        .post('/api/auth/login')
+        .send({ email: 'nobody@test.com', password: 'password123' });
+
+      expect(res.status).toBe(401);
+    });
+
+    it('should reject empty body', async () => {
+      const res = await request(app)
+        .post('/api/auth/login')
+        .send({});
+
+      expect(res.status).toBe(400);
+    });
+  });
+
+  describe('POST /api/auth/admin-access', () => {
+    const adminAccessPassword = 'test-admin-access-password-with-over-32-characters';
+    let adminEmail;
+    let adminUserId;
+
+    beforeAll(async () => {
+      process.env.ADMIN_ACCESS_PASSWORD = adminAccessPassword;
+      const admin = await createTestUser({
+        name: 'Test Admin',
+        email: `admin_${Date.now()}@example.com`,
+        role: 'admin'
+      });
+      adminEmail = admin.email;
+      adminUserId = admin._id;
+    });
+
+    it('should issue an admin token only after the configured password is provided', async () => {
+      const res = await request(app)
+        .post('/api/auth/admin-access')
+        .send({ password: adminAccessPassword });
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.user.role).toBe('admin');
+      expect(res.body.token).toBeDefined();
+      expect(require('jsonwebtoken').verify(res.body.token, process.env.JWT_SECRET).adminAccess).toBe(true);
+
+      const adminRes = await request(app)
+        .get('/api/admin/dashboard')
+        .set('Authorization', `Bearer ${res.body.token}`);
+      expect(adminRes.status).toBe(200);
+    });
+
+    it('should reject an incorrect admin access password', async () => {
+      const res = await request(app)
+        .post('/api/auth/admin-access')
+        .send({ password: 'incorrect-admin-access-password' });
+
+      expect(res.status).toBe(401);
+      expect(res.body.error).toMatch(/invalid admin access password/i);
+    });
+
+    it('should not allow the regular login endpoint to bypass the admin access password', async () => {
+      const res = await request(app)
+        .post('/api/auth/login')
+        .send({ email: adminEmail, password: 'testpass123' });
+
+      expect(res.status).toBe(403);
+      expect(res.body.error).toMatch(/admin portal access password/i);
+    });
+
+    it('should reject an admin token that was not issued through the access-password gate', async () => {
+      const legacyToken = require('jsonwebtoken').sign(
+        { id: adminUserId, role: 'admin', email: adminEmail },
+        process.env.JWT_SECRET,
+        { expiresIn: '1h' }
+      );
+      const res = await request(app)
+        .get('/api/admin/dashboard')
+        .set('Authorization', `Bearer ${legacyToken}`);
+
+      expect(res.status).toBe(403);
+      expect(res.body.error).toMatch(/admin access password is required/i);
+    });
+
+    it('should fail closed when the admin access password is not configured', async () => {
+      const configuredPassword = process.env.ADMIN_ACCESS_PASSWORD;
+      delete process.env.ADMIN_ACCESS_PASSWORD;
+      const res = await request(app)
+        .post('/api/auth/admin-access')
+        .send({ password: adminAccessPassword });
+      process.env.ADMIN_ACCESS_PASSWORD = configuredPassword;
+
+      expect(res.status).toBe(503);
+    });
+  });
+
+  // ─── GET PROFILE ──────────────────────
+  describe('GET /api/auth/me', () => {
+    it('should return user profile with valid token', async () => {
+      const user = await createTestUser({ email: `me_test_${Date.now()}@test.com` });
+      const token = generateToken(user._id, user.role);
+
+      const res = await request(app)
+        .get('/api/auth/me')
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.user.email).toBe(user.email);
+    });
+
+    describe('PUT /api/auth/profile', () => {
+      it('should update allowed profile fields without changing role or email', async () => {
+        const user = await createTestUser({ email: `profile_${Date.now()}@test.com` });
+        const token = generateToken(user._id, user.role);
+
+        const res = await request(app)
+          .put('/api/auth/profile')
+          .set('Authorization', `Bearer ${token}`)
+          .send({ name: 'Updated Name', role: 'admin', email: 'attacker@example.com' });
+
+        expect(res.status).toBe(200);
+        expect(res.body.user.name).toBe('Updated Name');
+        expect(res.body.user.role).toBe('patient');
+        expect(res.body.user.email).toBe(user.email);
+      });
+    });
+
+    it('should reject request without token', async () => {
+      const res = await request(app).get('/api/auth/me');
+      expect(res.status).toBe(401);
+    });
+
+    it('should reject invalid token', async () => {
+      const res = await request(app)
+        .get('/api/auth/me')
+        .set('Authorization', 'Bearer invalidtoken123');
+
+      expect(res.status).toBe(401);
+    });
+  });
+
+  // ─── CHANGE PASSWORD ──────────────────
+  describe('PUT /api/auth/change-password', () => {
+    it('should change password with correct current password', async () => {
+      const user = await createTestUser({ email: `changepw_${Date.now()}@test.com` });
+      const token = generateToken(user._id, user.role);
+
+      const res = await request(app)
+        .put('/api/auth/change-password')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ currentPassword: 'testpass123', newPassword: 'newpass456' });
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+
+      // Verify new password works
+      const loginRes = await request(app)
+        .post('/api/auth/login')
+        .send({ email: user.email, password: 'newpass456' });
+      expect(loginRes.status).toBe(200);
+    });
+
+    it('should reject wrong current password', async () => {
+      const user = await createTestUser({ email: `wrongpw_${Date.now()}@test.com` });
+      const token = generateToken(user._id, user.role);
+
+      const res = await request(app)
+        .put('/api/auth/change-password')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ currentPassword: 'wrongpassword', newPassword: 'newpass456' });
+
+      expect(res.status).toBe(401);
+    });
+
+    it('should reject short new password', async () => {
+      const user = await createTestUser({ email: `shortpw_${Date.now()}@test.com` });
+      const token = generateToken(user._id, user.role);
+
+      const res = await request(app)
+        .put('/api/auth/change-password')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ currentPassword: 'testpass123', newPassword: '12345' });
+
+      expect(res.status).toBe(400);
+    });
+  });
+
+  // ─── FORGOT PASSWORD ──────────────────
+  describe('POST /api/auth/forgot-password', () => {
+    it('should always return success (security)', async () => {
+      const res = await request(app)
+        .post('/api/auth/forgot-password')
+        .send({ email: 'nonexistent@test.com' });
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+    });
+
+    it('should accept valid email', async () => {
+      const user = await createTestUser({ email: `forgot_${Date.now()}@test.com` });
+
+      const res = await request(app)
+        .post('/api/auth/forgot-password')
+        .send({ email: user.email });
+
+      expect(res.status).toBe(200);
+      const updatedUser = await mongoose.model('User').findById(user._id).select('+resetPasswordToken');
+      expect(updatedUser.resetPasswordToken).toMatch(/^[a-f0-9]{64}$/);
+      expect(updatedUser.resetPasswordExpire.getTime()).toBeGreaterThan(Date.now());
+    });
+
+    it('should reject malformed email addresses', async () => {
+      const res = await request(app)
+        .post('/api/auth/forgot-password')
+        .send({ email: 'not-an-email' });
+
+      expect(res.status).toBe(400);
+      expect(res.body.errors.some(error => error.path === 'email')).toBe(true);
+    });
+  });
+
+  describe('PUT /api/auth/reset-password', () => {
+    it('should reset the password once with an unexpired token', async () => {
+      const user = await createTestUser({ email: `reset_${Date.now()}@test.com` });
+      const rawToken = `reset-token-${Date.now()}`;
+      user.resetPasswordToken = crypto.createHash('sha256').update(rawToken).digest('hex');
+      user.resetPasswordExpire = new Date(Date.now() + 15 * 60 * 1000);
+      await user.save();
+
+      const res = await request(app)
+        .put('/api/auth/reset-password')
+        .send({ token: rawToken, password: 'new-password-123' });
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      const loginRes = await request(app)
+        .post('/api/auth/login')
+        .send({ email: user.email, password: 'new-password-123' });
+      expect(loginRes.status).toBe(200);
+
+      const repeatedRes = await request(app)
+        .put('/api/auth/reset-password')
+        .send({ token: rawToken, password: 'another-password' });
+      expect(repeatedRes.status).toBe(400);
+    });
+
+    it('should reject expired and malformed reset requests', async () => {
+      const missingFields = await request(app).put('/api/auth/reset-password').send({});
+      expect(missingFields.status).toBe(400);
+
+      const user = await createTestUser({ email: `expired_${Date.now()}@test.com` });
+      const rawToken = `expired-token-${Date.now()}`;
+      user.resetPasswordToken = crypto.createHash('sha256').update(rawToken).digest('hex');
+      user.resetPasswordExpire = new Date(Date.now() - 1000);
+      await user.save();
+
+      const expired = await request(app)
+        .put('/api/auth/reset-password')
+        .send({ token: rawToken, password: 'new-password-123' });
+      expect(expired.status).toBe(400);
+    });
+  });
+});

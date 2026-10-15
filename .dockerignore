@@ -13,4 +13,6 @@ server/.env
 client/.env
 docker-compose.yml
 p.java
-package-lock.json
+
+server/storage
+*.log

@@ -1,12 +1,13 @@
 import axios from 'axios';
-import { getMockUser, getMockDoctors, getMockAppointments, getMockNotifications, isBackendAvailable } from './mockData';
-import { API_URL } from '../config/env';
+import { getMockUser, getMockDoctors, getMockAppointments, getMockNotifications } from '../data/mockData';
+import { API_URL, DEMO_MODE } from '../config/env';
 
 const api = axios.create({
   baseURL: API_URL,
   headers: {
     'Content-Type': 'application/json'
-  }
+  },
+  timeout: 15000
 });
 
 // Request interceptor
@@ -242,7 +243,8 @@ api.interceptors.response.use(
       error.code === 'ECONNABORTED' ||
       error.response?.status === 404 ||
       error.response?.status === 503;
-    if (canUseMockResponse && !isAdminAccessRequest) {
+    const requiresBackend = /\/(?:pharmacy\/orders|upload|payments)(?:\/|$)/.test(error.config?.url || '');
+    if (DEMO_MODE && canUseMockResponse && !isAdminAccessRequest && !requiresBackend) {
       try {
         const mockResponse = getMockResponse(error.config);
         return mockResponse;

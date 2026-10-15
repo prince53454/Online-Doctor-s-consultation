@@ -22,7 +22,12 @@ export default defineConfig(({ mode }) => {
       host: '0.0.0.0',
       port: 3000,
       strictPort: true,
-      allowedHosts: true
+      allowedHosts: true,
+      proxy: {
+        '/api': { target: env.VITE_BACKEND_URL || 'http://127.0.0.1:5000', changeOrigin: true },
+        '/uploads': { target: env.VITE_BACKEND_URL || 'http://127.0.0.1:5000', changeOrigin: true },
+        '/socket.io': { target: env.VITE_BACKEND_URL || 'http://127.0.0.1:5000', changeOrigin: true, ws: true }
+      }
     },
     build: {
       outDir: 'build',

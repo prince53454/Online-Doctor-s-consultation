@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
-import NotificationBell from '../NotificationBell';
+import NotificationBell from '../notifications/NotificationBell';
 import './Navbar.css';
 
 export default function Navbar() {
