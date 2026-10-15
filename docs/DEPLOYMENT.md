@@ -43,3 +43,22 @@ are blanked at the project owner's request. The encrypted Vercel values remain
 available to the deployed application. To run the backend locally again, provide
 private development credentials in `server/.env`; do not commit them. Vercel CLI
 metadata and local downloaded tokens are ignored and excluded from uploads.
+
+## Live verification
+
+The public pages, database health, Razorpay and Cloudinary configuration, admin
+sign-in, and authenticated admin dashboard passed live checks. GitHub CI passed
+the client build, server load, all 107 tests, Docker build, and container health
+check for commit `c850a48`.
+
+**Known deployment limitation:** the authenticated WebSocket handshake currently
+returns HTTP 404 on Vercel, including with the dedicated realtime function.
+Realtime chat, notification delivery, and video signaling are not verified as
+working on this deployment. Resolve the platform upgrade routing or configure a
+persistent realtime backend before relying on those features. Database-backed
+HTTP endpoints and the admin portal remain available.
+
+Local `server/.env` and the Vercel CLI-created `.env.local` values have been
+cleared after the successful HTTP/admin deployment checks. Credentials remain
+configured in Vercel production. Local development requires fresh private
+configuration before restarting the API.
