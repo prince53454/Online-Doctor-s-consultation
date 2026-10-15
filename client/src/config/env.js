@@ -5,3 +5,4 @@ export const SOCKET_URL = env.VITE_SOCKET_URL || env.REACT_APP_SOCKET_URL ||
   (typeof window !== 'undefined' ? window.location.origin : '');
 export const DEMO_MODE = (env.VITE_DEMO_MODE || env.REACT_APP_DEMO_MODE) === 'true';
 export const IS_DEVELOPMENT = env.DEV;
+export const SOCKET_PATH = env.VITE_SOCKET_PATH || '/socket.io';

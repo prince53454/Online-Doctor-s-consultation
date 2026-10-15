@@ -7,9 +7,13 @@
   "functions": {
     "api/index.js": {
       "maxDuration": 60
+    },
+    "api/socket.js": {
+      "maxDuration": 60
     }
   },
   "rewrites": [
+    { "source": "/api/socket/:path*", "destination": "/api/socket.js" },
     { "source": "/api/:path*", "destination": "/api/index.js" },
     { "source": "/socket.io/:path*", "destination": "/api/index.js" },
     { "source": "/((?!api/|socket.io/|assets/).*)", "destination": "/index.html" }

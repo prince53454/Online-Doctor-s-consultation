@@ -3,7 +3,7 @@ import { io } from 'socket.io-client';
 import api from '../services/api';
 import { useAuth } from './AuthContext';
 import toast from 'react-hot-toast';
-import { SOCKET_URL } from '../config/env';
+import { SOCKET_URL, SOCKET_PATH } from '../config/env';
 
 const NotificationContext = createContext(null);
 
@@ -17,7 +17,7 @@ export function NotificationProvider({ children }) {
   useEffect(() => {
     if (!user || !token) return;
 
-    const newSocket = io(SOCKET_URL, { transports: ['websocket'], withCredentials: true, auth: { token } });
+    const newSocket = io(SOCKET_URL, { path: SOCKET_PATH, transports: ['websocket'], withCredentials: true, auth: { token } });
     setSocket(newSocket);
 
     newSocket.on('notification', (notification) => {

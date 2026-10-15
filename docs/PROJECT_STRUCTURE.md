@@ -93,8 +93,7 @@ builds, installed dependencies, logs, and uploads are not source files.
 - Frontend, built-site routing, API health, and the development API proxy returned
   HTTP 200; the backend reports its database connected.
 - The production dependency audit reports zero vulnerabilities. Development
-  dependencies still have moderate advisories in Jest's `sprintf-js` dependency
-  chain; npm's proposed forced downgrade was not applied.
+  dependencies still have advisories in the Jest and GitHub Pages toolchains; npm's proposed forced downgrade was not applied.
 - Docker configuration was updated but not executed because Docker is unavailable
   in this environment. HTTP checks do not replace visual browser testing or live
   payment/upload testing.

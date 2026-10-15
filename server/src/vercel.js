@@ -19,6 +19,7 @@ gateway.use(app);
 
 const server = http.createServer(gateway);
 const io = new Server(server, {
+  path: '/api/socket/socket.io',
   transports: ['websocket'],
   cors: {
     origin: (process.env.CLIENT_URL || '').split(',').map(origin => origin.trim()),

@@ -3,10 +3,11 @@ import { useParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api';
 import io from 'socket.io-client';
-import { SOCKET_URL } from '../../config/env';
+import { SOCKET_URL, SOCKET_PATH } from '../../config/env';
 import './ChatConsultation.css';
 
 const socket = io(SOCKET_URL, {
+  path: SOCKET_PATH,
   transports: ['websocket'],
   withCredentials: true,
   autoConnect: false
