@@ -6,7 +6,8 @@
 
 This is a learning project; use sample data. The public sign-in screen links to
 both the source and the live application. The Admin Portal remains available;
-its password is provided privately by the project owner and verified by the API.
+its public demo password is `medipro@vt5434` and is verified by the API.
+This shared account has full administrator permissions.
 
 ## Hosting
 
@@ -16,7 +17,7 @@ API requests to `api/index.js` and Socket.IO requests to `api/socket.js`. The AP
 `server/src/vercel.js` and reuses a small MongoDB connection pool.
 
 Configure these in **Vercel ? Project ? Settings ? Environment Variables** for
-Production: `MONGODB_URI`, `JWT_SECRET`, `ADMIN_ACCESS_PASSWORD`,
+Production: `MONGODB_URI`, `JWT_SECRET`, `ADMIN_ACCESS_PASSWORD`, `PUBLIC_ADMIN_DEMO=true`,
 `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, `CLOUDINARY_CLOUD_NAME`,
 `CLOUDINARY_API_KEY`, and `CLOUDINARY_API_SECRET`. Set `CLIENT_URL` to the public
 site origin, `TRUST_PROXY_HOPS=1`, `VITE_DEMO_MODE=false`, and

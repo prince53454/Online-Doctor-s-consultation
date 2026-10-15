@@ -209,6 +209,26 @@ describe('Auth Routes', () => {
       expect(res.body.error).toMatch(/invalid admin access password/i);
     });
 
+    it('accepts a shorter public demo password only when demo admin access is enabled', async () => {
+      const previousDemo = process.env.PUBLIC_ADMIN_DEMO;
+      process.env.ADMIN_ACCESS_PASSWORD = 'demo-pass-1234';
+      try {
+        delete process.env.PUBLIC_ADMIN_DEMO;
+        const disabled = await request(app).post('/api/auth/admin-access').send({ password: 'demo-pass-1234' });
+        expect(disabled.status).toBe(503);
+        process.env.PUBLIC_ADMIN_DEMO = 'true';
+        const enabled = await request(app).post('/api/auth/admin-access').send({ password: 'demo-pass-1234' });
+        expect(enabled.status).toBe(200);
+        expect(enabled.body.user.role).toBe('admin');
+        const incorrect = await request(app).post('/api/auth/admin-access').send({ password: 'wrong-demo-password' });
+        expect(incorrect.status).toBe(401);
+      } finally {
+        process.env.ADMIN_ACCESS_PASSWORD = adminAccessPassword;
+        if (previousDemo === undefined) delete process.env.PUBLIC_ADMIN_DEMO;
+        else process.env.PUBLIC_ADMIN_DEMO = previousDemo;
+      }
+    });
+
     it('should not allow the regular login endpoint to bypass the admin access password', async () => {
       const res = await request(app)
         .post('/api/auth/login')

@@ -81,7 +81,8 @@ async function login(req, res) {
 
 async function adminAccess(req, res) {
   const configuredPassword = process.env.ADMIN_ACCESS_PASSWORD;
-  if (!configuredPassword || configuredPassword.length < 32) {
+  const minimumLength = process.env.PUBLIC_ADMIN_DEMO === 'true' ? 12 : 32;
+  if (!configuredPassword || configuredPassword.length < minimumLength) {
     return res.status(503).json({ success: false, error: 'Admin access is not configured' });
   }
 

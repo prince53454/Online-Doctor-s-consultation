@@ -233,11 +233,12 @@ export default function Login() {
             )}
             <div className="project-access">
               <p>Open-source learning project. Use sample data when exploring.</p>
-              <p>Admin access: select Admin Portal and enter the password provided by the project owner.</p>
               <nav aria-label="Project links">
                 <a href="https://github.com/prince53454/Online-Doctor-s-consultation" target="_blank" rel="noreferrer">GitHub source</a>
                 <a href="https://mediconnect-pro-prince53454.vercel.app" target="_blank" rel="noreferrer">Live website</a>
               </nav>
+              <p>Public demo admin password: <code>medipro@vt5434</code></p>
+              <p>Select Admin Portal to sign in. This public account has administrator permissions.</p>
             </div>
           </div>
         </div>
